@@ -1,4 +1,0 @@
-0.0	3.032	Un magicien n'est jamais en retard,\NFrodon Sacquet.
-4.347	8.627	Ni jamais en avance.\NIl arrive a point nomme.
-
-*** Re-synchronized with ReSuber, check the github page! ***

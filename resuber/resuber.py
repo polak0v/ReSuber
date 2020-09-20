@@ -23,7 +23,7 @@ class ReSuber():
         input_dir : string
             input directory to the SRT subtitle and WAV audio file(s) (default: .)
         output_dir : string 
-            output dir for the corrected SRT subtitle file (default: input_dir)
+            output dir for the corrected SRT subtitle file (default: input_dir/resuber-output)
         debug_dir : string 
             debug dir for debugging files (default: output_dir/resuber-debug)
         recursive : bool
@@ -54,7 +54,7 @@ class ReSuber():
             input_dir : string
                 input directory to the SRT subtitle and WAV audio file(s) (default: .)
             output_dir : string 
-                output dir for the corrected SRT subtitle file (default: input_dir)
+                output dir for the corrected SRT subtitle file (default: input_dir/resuber-output)
             recursive : bool
                 allow recursive search if vocals and/or subtitles are not specified (default: False)
             vocals : `list` [`string`]
@@ -109,7 +109,7 @@ class ReSuber():
     def set_output_dir(self):
         """Set the output directory. """
         if self.output_dir is None:
-            self.output_dir = self.input_dir
+            self.output_dir = os.path.join(self.input_dir, "resuber-output")
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
@@ -232,3 +232,4 @@ class ReSuber():
                     calculus.signal.save_labels(subs_resynced, output_label_filepath)
                 
                 print("\tsubtitle {} - params: {}".format(output_subtitle_filepath, best_params))
+                #TODO target fs should also be used to reduce input subtitles data. (1 sample each ms is to much)
