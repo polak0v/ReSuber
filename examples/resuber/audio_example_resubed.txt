@@ -1,0 +1,4 @@
+0.0	3.256	A wizard is never late,\NFrodo Baggins.
+4.264	8.463	Nor is he early.\NHe arrives precisely when he means to.
+
+*** Re-synchronized with ReSuber, check the github page! ***

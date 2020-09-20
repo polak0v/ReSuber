@@ -1,0 +1,68 @@
+#!/usr/bin/python3
+# coding: utf8
+
+"""ReSuber {} - Automatic tool to re-synchronize SRT subtitles given a vocal WAV file from a movie.
+
+ReSuber is an automatic tool to re-synchronize any SRT subtitles, using its corresponding vocal audio WAV stream from a movie.
+It uses machine learning techniques to perform language agnostic re-synchronization, by checking the signal correlation
+between the vocal audio stream and the corrected subtitle signal.
+
+License MIT.
+
+See https://github.com/polak0v/ReSuber for source code and documentation.
+"""
+
+import argparse
+import resuber.utils as utils
+from resuber import ReSuber
+
+def get_parser():
+    """Get the parser.
+    
+    Returns
+    -------
+        `argparse.ArgumentParser` : the argument parser
+    """
+    parser = argparse.ArgumentParser(description=__doc__.format(utils.args.get_version()), formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--debug'
+                        , action='store_true'
+                        , help=utils.args.get_docstring_option_help(ReSuber, "debug"))
+    parser.add_argument('--input-dir'
+                        , dest="input_dir"
+                        , help=utils.args.get_docstring_option_help(ReSuber, "input_dir"))
+    parser.add_argument('--output-dir'
+                        , dest="output_dir"
+                        , help=utils.args.get_docstring_option_help(ReSuber, "output_dir"))
+    parser.add_argument('--recursive'
+                        , action='store_true'
+                        , help=utils.args.get_docstring_option_help(ReSuber, "recursive"))
+    parser.add_argument('--subtitles'
+                        , nargs='*'
+                        , action='append'
+                        , help=utils.args.get_docstring_option_help(ReSuber, "subtitles"))
+    parser.add_argument('--vocals'
+                        , nargs='*'
+                        , help=utils.args.get_docstring_option_help(ReSuber, "vocals"))
+    parser.add_argument('--refine'
+                        , choices=['no', 'mask', 'sample']
+                        , help=utils.args.get_docstring_option_help(ReSuber, "refine"))
+    parser.add_argument('--max-shift'
+                        , dest="max_shift"
+                        , type=float
+                        , help=utils.args.get_docstring_option_help(ReSuber, "max_shift"))
+    parser.add_argument('--min-clusters-distance'
+                        , dest="min_clusters_distance"
+                        , type=float
+                        , help=utils.args.get_docstring_option_help(ReSuber, "min_clusters_distance"))
+    parser.add_argument('--version'
+                        , action='version'
+                        , version=utils.args.get_version())
+    return parser
+
+def main():
+    args = get_parser().parse_args()
+    args = utils.args.remove_none_args(args)
+    ReSuber(**vars(args))()
+
+if __name__ == '__main__':
+    main()

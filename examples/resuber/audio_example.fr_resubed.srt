@@ -1,0 +1,11 @@
+1
+00:00:00,000 --> 00:00:03,032
+Un magicien n'est jamais en retard,
+Frodon Sacquet.
+
+2
+00:00:04,347 --> 00:00:08,627
+Ni jamais en avance.
+Il arrive a point nomme.
+*** Re-synchronized with ReSuber, check the github page! ***
+
