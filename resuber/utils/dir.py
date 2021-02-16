@@ -47,7 +47,7 @@ def filepath_match(all_filepaths, filepath):
         all_filepaths : `list` [string]
             all the filepaths to be checked for a match
         filepath : string
-            the filepaths to match
+            the filepath to match
 
     Returns
     -------
@@ -55,11 +55,17 @@ def filepath_match(all_filepaths, filepath):
     """
     filepaths = []
     filepath_name = '.'.join(os.path.basename(filepath).split('.')[:-1])
-    for filepath in all_filepaths:
-        match = re.search(filepath_name, os.path.basename(filepath))
+    # escape parenthesis
+    filepath_name = filepath_name.replace("(", "\\(")
+    filepath_name = filepath_name.replace(")", "\\)")
+    filepath_name = filepath_name.replace("[", "\\[")
+    filepath_name = filepath_name.replace("]", "\\]")
+    filepath_name = filepath_name.replace(".", "\\.")
+    for fpath in all_filepaths:
+        match = re.search(filepath_name, os.path.basename(fpath))
         if match:
             if match[0]:
-                filepaths += [filepath]
+                filepaths += [fpath]
     
     return filepaths
 
