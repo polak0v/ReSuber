@@ -22,7 +22,6 @@ install:
 	@python3 -m pip install -e .
 
 publish: install
-	#https://medium.com/@pinglinh/how-to-have-2-github-accounts-on-one-machine-windows-69b5b4c5b14e
 	@git push origin && git push --tags origin
 	@$(MAKE) clean
 	@python3 -m pip install twine wheel setuptools
