@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from scipy.io import wavfile
 
-def read_audio(audio_filepath, target_fs=44100, mono=True):
+def read_audio(audio_filepath, target_fs=1000, mono=True):
     """Read an audio file and optionnaly resample it into a mono channel.
 
     Parameters
@@ -11,7 +11,7 @@ def read_audio(audio_filepath, target_fs=44100, mono=True):
         audio_filepath : string, required
             filepath to the audio WAV file
         target_fs : float
-            target sampling rate (default: 44.1 kHz)
+            target sampling rate (default: 1 kHz)
         mono : bool
             convert the audio into a mono-channel (default: True)
 
@@ -46,17 +46,19 @@ def save_audio(audio, audio_filepath, fs):
         audio_filepath : string, required
             output filepath to the audio WAV file
         fs : float, required
-            sampling rate
+            sampling rate in Hz
     """
     wavfile.write(audio_filepath, fs, audio)
 
-def read_subs(input_sub_filepath):
+def read_subs(input_sub_filepath, target_fs=1000):
     """Read a subtitle file and convert it into a numerical signal.
 
     Parameters
     ----------
         input_sub_filepath : string, required
             filepath to the input subtitle SRT file
+        target_fs : float
+            target sampling rate in Hz (default: 1 kHz)
 
     Returns
     -------
@@ -73,15 +75,18 @@ def read_subs(input_sub_filepath):
     duration_sub_in_ms = subs[-1].end
 
     # box signal correspond to the subs
-    subs_signal = np.zeros((duration_sub_in_ms + 1,), dtype=np.int32)
+    target_ratio = target_fs / 1000.
+    subs_signal = np.zeros(( np.int32(duration_sub_in_ms*target_ratio + 1),), dtype=np.int32)
     starts = np.array([], dtype=np.int32)
     ends = np.array([], dtype=np.int32)
     for sub in subs:
         start = np.int32(sub.start)
+        start_ix = np.int32(sub.start*target_ratio)
         end = np.int32(sub.end)
+        end_ix = np.int32(sub.end*target_ratio)
         starts = np.append(starts, start)
         ends = np.append(ends, end)
-        subs_signal[start:end] = 1
+        subs_signal[start_ix:end_ix] = 1
 
     return subs_signal, subs, starts, ends
 
@@ -132,18 +137,18 @@ def gaussian_kernel_1d(filter_length):
     width = int(filter_length/2)
 
     norm = 1.0 / (np.sqrt(2*np.pi) * sigma)
-    kernel = [norm * np.exp((-1)*(x**2)/(2 * sigma**2)) for x in range(-width, width)]  
+    kernel = [norm * np.exp((-1)*(x**2)/(2 * sigma**2)) for x in range(-width, width + 1)]  
 
     return np.float32(kernel / np.sum(kernel))
 
-def tf_1d_gaussian_filtering(signal, kernel_size=500):
+def tf_1d_gaussian_filtering(signal, kernel_size):
     """Tensorflow convolution of the input signal with a gaussian kernel.
 
     Parameters
     ----------
         signal : `np.array` or `tf.tensor` [float], required
             input signal to be convolved with a gaussian kernel
-        kernel_size : int
+        kernel_size : int. required
             width of the 1D gaussian kernel
     
     Returns
@@ -163,7 +168,7 @@ def filter_audio(audio, threshold=None, kernel_size=None):
         audio : `np.array` [float], required
             input audio signal
         threshold : float
-            input audio will be thresholded by this amount (default: np.quantile(audio, 1/3))
+            input audio will be thresholded by this amount (default: np.quantile(audio, 1/4))
         kernel_size : int
             width of the 1D gaussian kernel for the input audio convolution (default: 100)
     
@@ -173,12 +178,13 @@ def filter_audio(audio, threshold=None, kernel_size=None):
     """
     # get and convolve the audio magnitude spectrum
     audio_mag = np.abs(audio)
-    audio_filtered = tf_1d_gaussian_filtering(audio_mag, kernel_size=100)
+    audio_filtered = tf_1d_gaussian_filtering(audio_mag, kernel_size=kernel_size)
+    default_threshold = np.quantile(audio_filtered[audio_mag>0], 1/2)
     # manual threshold to filter noise
     if threshold is None:
-        threshold = np.quantile(audio_filtered, 1/3)
+        threshold = default_threshold
     else:
-        threshold = max(threshold, np.quantile(audio_filtered, 1/3))
+        threshold = max(threshold, default_threshold)
     audio_preprocessed = np.array(audio_filtered > threshold, dtype=np.int32)
 
     return audio_preprocessed
@@ -201,31 +207,33 @@ def rescale_audio_subs(audio, subs_signal):
             input subtitle signal resized
     """
     # rescaling sub or audio so they have the same length
-    duration_sub_in_ms = subs_signal.shape[0]
-    duration_audio_in_ms = audio.shape[0]
+    duration_sub = subs_signal.shape[0]
+    duration_audio = audio.shape[0]
 
-    if duration_sub_in_ms < duration_audio_in_ms:
-        duration = duration_audio_in_ms - duration_sub_in_ms
+    if duration_sub < duration_audio:
+        duration = duration_audio - duration_sub
         subs_signal = tf.concat([subs_signal, tf.zeros((duration), dtype=tf.float32)], axis=0)
     else:
-        duration = duration_sub_in_ms - duration_audio_in_ms
+        duration = duration_sub - duration_audio
         audio = tf.concat([audio, tf.zeros((duration), dtype=tf.float32)], axis=0)
 
     return audio, subs_signal
 
-def get_subs_mask(subs_signal, starts, ends, max_duration_allowed=10000):
+def get_subs_mask(subs_signal, starts, ends, max_duration_allowed=10000, fs=1000):
     """Get a mask from a subtitle signal and starts/ends event, where each cluster is identified by its int value.
 
     Parameters
     ----------
         subs_signal : `np.array` [float], required
             input subtitle signal
-        starts : `np.array` [float], required
+        starts : `np.array` [np.int32], required
             subtitles starts events in ms
-        starts : `np.array` [float], required
+        ends : `np.array` [np.int32], required
             subtitles ends events in ms
         max_duration_allowed : int
-            maximum duration allowed in ms between two subtitle events to form one cluster (default: 10000)
+            maximum duration in ms allowed between two subtitle events to form one cluster (default: 10000 ms)
+        fs : float
+            Sampling rate in Hz (default: 1 kHz)
     
     Returns
     -------
@@ -234,17 +242,18 @@ def get_subs_mask(subs_signal, starts, ends, max_duration_allowed=10000):
     mask_subs_signal = np.zeros_like(subs_signal)
     num_sub = len(starts)
     middle_subs = np.array([], dtype=np.int32)
+    fs_ratio = fs / 1000.
     # clustering the subs into n groups
     for i in range(num_sub - 1):
-        dura = np.int32(starts[i+1]) - np.int32(ends[i])
-        if(dura > max_duration_allowed):
-            middle_sub = np.int32((np.int32(ends[i]) + np.int32(starts[i+1]))/2)
+        dura = starts[i+1]*fs_ratio - ends[i]*fs_ratio
+        if(dura > max_duration_allowed*fs_ratio):
+            middle_sub = np.int32((ends[i]*fs_ratio + starts[i+1]*fs_ratio)/2)
             middle_subs = np.append(middle_subs, [middle_sub])
     mask_subs_signal[middle_subs] = 1
 
     return np.cumsum(mask_subs_signal)
 
-def resync_subs(params, subs, max_duration_in_ms, mask=None):
+def resync_subs(params, subs, max_duration, mask=None, fs=1000):
     """Re-synchronize the subtitle object given the transformation parameters.
 
     Parameters
@@ -253,31 +262,36 @@ def resync_subs(params, subs, max_duration_in_ms, mask=None):
             transformation parameters
         subs : `pysubs2.ssafile.SSAFile`, required
             subtitle object with all the subtitle events
-        max_duration_in_ms : float, required
+        max_duration : float, required
             maximum time allowed of a subtitle event (should be the duration of the corresponding audio signal)
         mask : `np.array` [float]
             mask with cluster id values for each sample in the input subtitle signal
+        fs : float
+            Sampling rate in Hz (default: 1 kHz)
     
     Returns
     -------
         `pysubs2.ssafile.SSAFile` : subtitle object with all the re-synchronized subtitle events
     """
+    target_ratio = fs / 1000.
     for sub, i in zip(subs, range(len(subs))):
-        start =  sub.start*params[0] + params[1]
-        end = sub.end*params[0] + params[1]
+        input_start = int(sub.start * target_ratio)
+        input_end = int(sub.end * target_ratio)
+        start =  params[0]*input_start + params[1]
+        end = params[0]*input_end + params[1]
         # non-rigid
         if len(params) != 2:
             if mask is None:
-                idx_start = int(sub.start)
-                idx_end = int(sub.end)
+                idx_start =  input_start
+                idx_end = input_end
             else:
-                idx_start = int(mask[int(sub.start)])
-                idx_end = int(mask[int(sub.end)])
+                idx_start = int(mask[input_start])
+                idx_end = int(mask[input_end])
             start = start + params[2][idx_start]
             end = end + params[2][idx_end]
         # updating subtitle file
-        subs[i].start = min(max(0, int(start)), max_duration_in_ms)
-        subs[i].end = min(max(0, int(end)), max_duration_in_ms)
+        subs[i].start = min(max(0, int(start/target_ratio)), max_duration/target_ratio)
+        subs[i].end = min(max(0, int(end/target_ratio)), max_duration/target_ratio)
 
     return subs
 
@@ -303,19 +317,20 @@ if __name__ == '__main__':
     label_filepath = "examples/audio_example.txt"
 
     # reading signals
-    vocal, _ = read_audio(audio_filepath, target_fs=1000)
-    subs_signal, subs, subs_starts, subs_ends = read_subs(sub_filepath)
+    fs = 100
+    vocal, _ = read_audio(audio_filepath, target_fs=fs)
+    subs_signal, subs, subs_starts, subs_ends = read_subs(sub_filepath, target_fs=fs)
     # preprocessing audio
-    vocal_preprocessed = filter_audio(vocal, threshold=1000, kernel_size=100)
+    vocal_preprocessed = filter_audio(vocal, threshold=1000, kernel_size=10)
     # rescale to make sure the two signals have the same size
     vocal_preprocessed, subs_signal = rescale_audio_subs(vocal_preprocessed, subs_signal)
     # low-pass filtering to create dynamic for the signals (and avoid numerical instability during interpolation)
-    subs_signal = tf_1d_gaussian_filtering(subs_signal, kernel_size=500)
-    vocal_preprocessed = tf_1d_gaussian_filtering(vocal_preprocessed, kernel_size=500)
+    subs_signal = tf_1d_gaussian_filtering(subs_signal, kernel_size=50)
+    vocal_preprocessed = tf_1d_gaussian_filtering(vocal_preprocessed, kernel_size=50)
     # get mask
-    mask = get_subs_mask(subs_signal, subs_starts, subs_ends, max_duration_allowed=100)
+    mask = get_subs_mask(subs_signal, subs_starts, subs_ends, max_duration_allowed=100, fs=fs)
     # resyncs
-    resynced_subs = resync_subs([1., 100.], subs, max_duration_in_ms=subs_signal.shape[0])
+    resynced_subs = resync_subs([1., 100.*(fs/1000.)], subs, max_duration=subs_signal.shape[0], fs=fs)
     # credits
     add_credits(subs)
     # save audacity label

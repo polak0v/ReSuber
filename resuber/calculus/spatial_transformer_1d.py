@@ -29,7 +29,7 @@ class SpatialTransformer1d():
             maximum offset range allowed for non-rigid transformation (default: None)
     """
 
-    def __init__(self, rigid=True, mask=None, num_clusters=None, max_offset_range=None):
+    def __init__(self, rigid=True, mask=None, num_clusters=None, max_offset_range=None, w_trainable=True, b_trainable=True):
         """Initialize the SpatialTransformer1d class.
 
         Parameters
@@ -41,12 +41,16 @@ class SpatialTransformer1d():
             num_clusters : int
                 number of clusters that will be transformed, requires to be the input size for non-masked non-rigid transformation
             max_offset_range : float
-                maximum offset range allowed for non-rigid transformation (default: None)     
+                maximum offset range allowed for non-rigid transformation (default: None)
+            w_trainable : bool
+                trainable weight or not (default: True)
+            b_trainable : bool
+                trainable bias or not (default: True)
         """
         self.rigid = rigid
         self.eps = 1e-9
-        self.W = tf.Variable([1. + self.eps], dtype=tf.float32, trainable=True, name="W")
-        self.b = tf.Variable([0. + self.eps], dtype=tf.float32, trainable=True, name="b")
+        self.W = tf.Variable([1. + self.eps], dtype=tf.float32, trainable=w_trainable, name="W")
+        self.b = tf.Variable([0. + self.eps], dtype=tf.float32, trainable=b_trainable, name="b")
         self.max_offset_range = max_offset_range
         self.num_clusters = num_clusters
         self.mask = mask

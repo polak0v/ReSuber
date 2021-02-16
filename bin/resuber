@@ -46,6 +46,27 @@ def get_parser():
     parser.add_argument('--refine'
                         , choices=['no', 'mask', 'sample']
                         , help=utils.args.get_docstring_option_help(ReSuber, "refine"))
+    parser.add_argument('--fs'
+                        , type=float
+                        , help=utils.args.get_docstring_option_help(ReSuber, "fs"))
+    parser.add_argument('--range-weight'
+                        , dest="range_weight"
+                        , nargs='*'
+                        , type=float
+                        , help=utils.args.get_docstring_option_help(ReSuber, "range_weight"))
+    parser.add_argument('--range-offset'
+                        , dest="range_offset"
+                        , nargs='*'
+                        , type=float
+                        , help=utils.args.get_docstring_option_help(ReSuber, "range_offset"))
+    parser.add_argument('--fix-weight'
+                        , dest="fix_weight"
+                        , action='store_true'
+                        , help=utils.args.get_docstring_option_help(ReSuber, "fix_weight"))
+    parser.add_argument('--fix-offset'
+                        , dest="fix_offset"
+                        , action='store_true'
+                        , help=utils.args.get_docstring_option_help(ReSuber, "fix_offset"))
     parser.add_argument('--max-shift'
                         , dest="max_shift"
                         , type=float

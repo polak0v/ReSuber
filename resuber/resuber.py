@@ -36,6 +36,16 @@ class ReSuber():
             input filename(s) to the SRT subtitle file(s) per WAV vocal file
         input_subtitle_filepaths : `list` `list` [`string`]
             input filepaths(s) to the SRT subtitle file(s) per WAV vocal file (input_dir + "/" + input_subtitle_names)
+        fs : float
+            Sampling rate in Hz
+        range_weight : `list` [float]
+            range allowed for the weight parameter during rough exploration
+        range_offset : `list` [float]
+            range allowed in ms for the offset parameter during rough exploration
+        w_trainable : bool
+            enable the optimization of the weight parameter (default: True)
+        b_trainable : bool
+            enable the optimization of the offset parameter (default: True)
         refine_mode : {'mask', 'sample', 'no'}
             mask (cluster-wise), sample-wise or no non-linear refinement of the subtitles
         max_shift : float
@@ -44,7 +54,21 @@ class ReSuber():
             if masked non-linear refinement is allowed, specify minimal distance allowed between clusters in ms
     """
 
-    def __init__(self, debug=False, input_dir=None, output_dir=None, recursive=False, subtitles=None, vocals=None, refine='no', max_shift=500., min_clusters_distance=10000.):
+    def __init__(self
+                , debug=False
+                , input_dir=None
+                , output_dir=None
+                , recursive=False
+                , subtitles=None
+                , vocals=None
+                , fs=100
+                , range_weight=[-1e-2, 1e-2]
+                , range_offset=[-5000., 5000.]
+                , fix_weight=False
+                , fix_offset=False
+                , refine='no'
+                , max_shift=500.
+                , min_clusters_distance=10000.):
         """Initialize the ReSuber class.
 
         Parameters
@@ -61,12 +85,22 @@ class ReSuber():
                 input filename(s) to the WAV vocal file(s) (default: ./*.wav)
             subtitles : `list` `list` [`string`]
                 input filename(s) to the SRT subtitle file(s) per WAV vocal file (default: ./*.srt)
+            fs : float
+                sampling rate in Hz (default: 100 Hz)
+            range_weight : `list` [float]
+                range allowed for the weight parameter during rough exploration (default: [-1e-2, 1e-2])
+            range_offset : `list` [float]
+                range allowed in ms for the offset parameter during rough exploration (default: [-5000., 5000.])
+            fix_weight : bool
+                disable the optimization of the weight parameter (default: False)
+            fix_offset : bool
+                disable the optimization of the offset parameter (default: False)
             refine : {'mask', 'sample', 'no'}
                 mask (cluster-wise), sample-wise or no non-linear refinement of the subtitle signal (default: 'no')
             max_shift : float
-                if non-linear refinement is allowed, define the maximum acceptable shift in ms (default: 500)
+                if non-linear refinement is allowed, define the maximum acceptable shift in ms (default: 500 ms)
             min_clusters_distance : float
-                if masked non-linear refinement is allowed, specify minimal distance allowed between clusters in ms (default: 10000)
+                if masked non-linear refinement is allowed, specify minimal distance allowed between clusters in ms (default: 10000 ms)
         """
         self.debug = debug
         self.input_dir = input_dir
@@ -74,6 +108,11 @@ class ReSuber():
         self.recursive = recursive
         self.input_subtitle_names = subtitles
         self.vocal_names = vocals
+        self.fs = fs
+        self.range_weight = range_weight
+        self.range_offset = range_offset
+        self.w_trainable = not fix_weight
+        self.b_trainable = not fix_offset
         self.refine_mode = refine
         self.max_shift = max_shift
         self.min_clusters_distance = min_clusters_distance
@@ -88,16 +127,21 @@ class ReSuber():
         return str(__file__) \
                 + "\n" + str(datetime.datetime.now()) \
                 + "\n" + str(platform.platform()) \
-                + "\n" + "class ReSuber()" \
+                + "\n" + "class {} - {}".format(self.__class__.__name__, utils.args.get_version()) \
                 + "\n\t debug : {}".format(self.debug) \
                 + "\n\t input_dir : {}".format(self.input_dir) \
                 + "\n\t output_dir : {}".format(self.output_dir) \
                 + "\n\t recursive : {}".format(self.recursive) \
                 + "\n\t subtitles : {}".format(self.input_subtitle_names) \
                 + "\n\t vocals : {}".format(self.vocal_names) \
+                + "\n\t fs : {}".format(self.fs) \
+                + "\n\t range-weight : {}".format(self.range_weight) \
+                + "\n\t range-offset : {}".format(self.range_offset) \
+                + "\n\t fix-weight : {}".format(not self.w_trainable) \
+                + "\n\t fix-offset : {}".format(not self.b_trainable) \
                 + "\n\t refine : {}".format(self.refine_mode) \
-                + "\n\t max_shift : {}".format(self.max_shift) \
-                + "\n\t min_clusters_distance : {}".format(self.min_clusters_distance)
+                + "\n\t max-shift : {}".format(self.max_shift) \
+                + "\n\t min-clusters_distance : {}".format(self.min_clusters_distance)
 
     def set_input_dir(self):
         """Set the input directory. """
@@ -190,6 +234,7 @@ class ReSuber():
 
     def __call__(self):
         print(self.__repr__() + "\n")
+        start_time = time.time()
         # initialize tensorflow
         if self.debug:
             tf.config.list_physical_devices('GPU')
@@ -202,29 +247,41 @@ class ReSuber():
             print("Processing {}/{}".format(i+1, n_vocals))
             print("\tvocal {}".format(vocal_filepath))
             # reading and pre-processing vocal
-            vocal, _ = calculus.signal.read_audio(vocal_filepath, target_fs=1000)
-            vocal_preprocessed = calculus.signal.filter_audio(vocal, threshold=1000, kernel_size=100)
+            vocal, _ = calculus.signal.read_audio(vocal_filepath, target_fs=self.fs)
+            vocal = tf.constant(vocal, dtype=tf.float32)
+            ksize = max(10, int(500. * (self.fs / 1000.)))
+            vocal_preprocessed = calculus.signal.filter_audio(vocal, kernel_size=ksize)
             # low-pass filtering to create dynamic for the binary signal (and avoid numerical instability during interpolation)
-            vocal_preprocessed = calculus.signal.tf_1d_gaussian_filtering(vocal_preprocessed, kernel_size=500)
+            vocal_preprocessed = calculus.signal.tf_1d_gaussian_filtering(vocal_preprocessed, kernel_size=ksize)
 
             for input_subtitle_filepath in self.input_subtitle_filepaths[i]:
                 output_subtitle_filepath = os.path.join(self.output_dir, os.path.basename(input_subtitle_filepath[:-4] + "_resubed" + ".srt"))
                 # reading subtitles signal
-                subs_signal, subs, subs_starts, subs_ends = calculus.signal.read_subs(input_subtitle_filepath)
+                subs_signal, subs, subs_starts, subs_ends = calculus.signal.read_subs(input_subtitle_filepath, target_fs=self.fs)
+                subs_signal = tf.constant(subs_signal, dtype=tf.float32)
                 # low-pass filtering to create dynamic the binary signal (and avoid numerical instability during interpolation)
-                subs_signal = calculus.signal.tf_1d_gaussian_filtering(subs_signal, kernel_size=500)
+                subs_signal = calculus.signal.tf_1d_gaussian_filtering(subs_signal, kernel_size=ksize)
                 # rescale to make sure the two signals have the same size
                 vocal_preprocessed, subs_signal = calculus.signal.rescale_audio_subs(vocal_preprocessed, subs_signal)
                 mask_subs = None
                 if self.refine_mode == "mask":
-                    mask_subs = calculus.signal.get_subs_mask(subs_signal, subs_starts, subs_ends, max_duration_allowed=self.min_clusters_distance)
+                    mask_subs = calculus.signal.get_subs_mask(subs_signal, subs_starts, subs_ends, max_duration_allowed=self.min_clusters_distance, fs=self.fs)
                 # numerical optimization
+                debug_sub_dir = ""
                 if self.debug:
                     debug_sub_dir = os.path.join(self.debug_dir, os.path.basename(input_subtitle_filepath[:-4]))
-                best_params = calculus.ml.fit(subs_signal, vocal_preprocessed, 
-                                                rigid=self.refine_mode == "no", mask=mask_subs, max_offset_range=self.max_shift, debug_dir=debug_sub_dir)
+                best_params = calculus.ml.fit(subs_signal, vocal_preprocessed
+                                            , rigid=self.refine_mode == "no"
+                                            , mask=mask_subs
+                                            , max_offset_range=self.max_shift
+                                            , range_weight=self.range_weight
+                                            , range_offset=self.range_offset
+                                            , w_trainable=self.w_trainable
+                                            , b_trainable=self.b_trainable
+                                            , fs=self.fs
+                                            , debug_dir=debug_sub_dir)
                 # subtitle re-synchronization and save
-                subs_resynced = calculus.signal.resync_subs(best_params, subs, mask=mask_subs, max_duration_in_ms=subs_signal.shape[0])
+                subs_resynced = calculus.signal.resync_subs(best_params, subs, mask=mask_subs, max_duration=subs_signal.shape[0], fs=self.fs)
                 calculus.signal.add_credits(subs_resynced)
                 calculus.signal.save_subs(subs_resynced, output_subtitle_filepath)
                 if self.debug:
@@ -232,4 +289,5 @@ class ReSuber():
                     calculus.signal.save_labels(subs_resynced, output_label_filepath)
                 
                 print("\tsubtitle {} - params: {}".format(output_subtitle_filepath, best_params))
-                #TODO target fs should also be used to reduce input subtitles data. (1 sample each ms is to much)
+        print("###")
+        print("ReSuber duration {} s".format(time.time() - start_time))
