@@ -50,7 +50,7 @@ def save_audio(audio, audio_filepath, fs):
     """
     wavfile.write(audio_filepath, fs, audio)
 
-def read_subs(input_sub_filepath, target_fs=1000):
+def read_subs(input_sub_filepath, target_fs=1000, encoding="utf-8"):
     """Read a subtitle file and convert it into a numerical signal.
 
     Parameters
@@ -71,7 +71,7 @@ def read_subs(input_sub_filepath, target_fs=1000):
         ends : `np.array` [np.int32]
             subtitles ends events in ms
     """
-    subs = pysubs2.load(input_sub_filepath, encoding="utf-8")
+    subs = pysubs2.load(input_sub_filepath, encoding=encoding)
     duration_sub_in_ms = subs[-1].end
 
     # box signal correspond to the subs
