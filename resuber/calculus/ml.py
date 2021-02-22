@@ -21,7 +21,7 @@ def plot_cost(cost, init_params, range_min, range_max, debug_dir):
             directory path where to store debugging information (cost image, iterations and model output)
     """
     # cost function over params
-    fig = px.imshow(cost, color_continuous_scale='gray', aspect='auto', labels={'x':'offset (fs/1000 ms)', 'y':'ratio', 'color':'cost value'},
+    fig = px.imshow(cost, color_continuous_scale='gray', aspect='auto', labels={'x':'offset (fs/1000 ms)', 'y':'ratio', 'color':'cost value (negative better)'},
                         x=np.linspace(init_params[1] + range_min[1], init_params[1] + range_max[1], cost.shape[1]),
                         y=np.linspace(init_params[0] + range_min[0], init_params[0] + range_max[0], cost.shape[0]) )
     fig.write_html('{}/cost_2d.html'.format(debug_dir))
