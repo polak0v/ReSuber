@@ -307,7 +307,7 @@ def add_credits(subs):
     -------
         `pysubs2.ssafile.SSAFile` : subtitle object with credits appended at the end
     """
-    subs[-1].text = subs[-1].text + "\n\n*** Re-synchronized with ReSuber, check the github page! ***"
+    subs[-1].text = subs[-1].text + "\n\n*** Re-synchronized with ReSuber, check the github page https://github.com/polak0v/ReSuber! ***"
 
     return subs
 
