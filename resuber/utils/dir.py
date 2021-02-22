@@ -1,7 +1,7 @@
 import os
 import re
 
-def get_files_list(dir, recursive=True, ext=None):
+def get_files_list(dir, recursive=True, ext=None, exclude="(?!x)x"):
     """Return the list of path to files from a dir.
     
     Parameters
@@ -21,6 +21,8 @@ def get_files_list(dir, recursive=True, ext=None):
     if recursive:
         for root, _, files in os.walk(dir):
             for file in files:
+                if re.search(exclude, file) is not None:
+                    continue
                 filepath = os.path.join(root, file)
                 if ext is not None:
                     if filepath.split('.')[-1] == ext:
@@ -29,6 +31,8 @@ def get_files_list(dir, recursive=True, ext=None):
                     filepaths += [filepath]
     else:
         for file in os.listdir(dir):
+            if re.search(exclude, file) is not None:
+                continue
             filepath = os.path.join(dir, file)
             if os.path.isfile(filepath):
                 if ext is not None:
