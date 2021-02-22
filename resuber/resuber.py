@@ -36,8 +36,10 @@ class ReSuber():
             input filename(s) to the SRT subtitle file(s) per WAV vocal file
         input_subtitle_filepaths : `list` `list` [`string`]
             input filepaths(s) to the SRT subtitle file(s) per WAV vocal file (input_dir + "/" + input_subtitle_names)
+        encoding : `string`
+            encoding for subtitles (default: utf-8)
         fs : float
-            Sampling rate in Hz
+            sampling rate in Hz
         range_weight : `list` [float]
             range allowed for the weight parameter during rough exploration
         range_offset : `list` [float]
@@ -61,6 +63,7 @@ class ReSuber():
                 , recursive=False
                 , subtitles=None
                 , vocals=None
+                , encoding="utf-8"
                 , fs=100
                 , range_weight=[-1e-2, 1e-2]
                 , range_offset=[-5000., 5000.]
@@ -83,6 +86,8 @@ class ReSuber():
                 allow recursive search if vocals and/or subtitles are not specified (default: False)
             vocals : `list` [`string`]
                 input filename(s) to the WAV vocal file(s) (default: ./*.wav)
+            encoding : `string`
+                encoding for subtitles (default: utf-8)
             subtitles : `list` `list` [`string`]
                 input filename(s) to the SRT subtitle file(s) per WAV vocal file (default: ./*.srt)
             fs : float
@@ -108,6 +113,7 @@ class ReSuber():
         self.recursive = recursive
         self.input_subtitle_names = subtitles
         self.vocal_names = vocals
+        self.encoding = encoding
         self.fs = fs
         self.range_weight = range_weight
         self.range_offset = range_offset
@@ -134,6 +140,7 @@ class ReSuber():
                 + "\n\t recursive : {}".format(self.recursive) \
                 + "\n\t subtitles : {}".format(self.input_subtitle_names) \
                 + "\n\t vocals : {}".format(self.vocal_names) \
+                + "\n\t encoding : {}".format(self.encoding) \
                 + "\n\t fs : {}".format(self.fs) \
                 + "\n\t range-weight : {}".format(self.range_weight) \
                 + "\n\t range-offset : {}".format(self.range_offset) \
@@ -188,7 +195,7 @@ class ReSuber():
     def set_subtitles_and_vocals(self):
         """Set the subtitle and vocal file paths. """
         self.init_subtitles_and_vocals()
-        all_subtitles = utils.dir.get_files_list(dir=self.input_dir, recursive=self.recursive, ext="srt")
+        all_subtitles = utils.dir.get_files_list(dir=self.input_dir, recursive=self.recursive, ext="srt", exclude="resubed")
         all_vocals = utils.dir.get_files_list(dir=self.input_dir, recursive=self.recursive, ext="wav")
 
         # if subtitles are empty, vocals are used to match and get subtitles
@@ -255,9 +262,9 @@ class ReSuber():
             vocal_preprocessed = calculus.signal.tf_1d_gaussian_filtering(vocal_preprocessed, kernel_size=ksize)
 
             for input_subtitle_filepath in self.input_subtitle_filepaths[i]:
-                output_subtitle_filepath = os.path.join(self.output_dir, os.path.basename(input_subtitle_filepath[:-4] + "_resubed" + ".srt"))
+                output_subtitle_filepath = os.path.join(self.output_dir, os.path.basename(input_subtitle_filepath + ".resubed.srt"))
                 # reading subtitles signal
-                subs_signal, subs, subs_starts, subs_ends = calculus.signal.read_subs(input_subtitle_filepath, target_fs=self.fs)
+                subs_signal, subs, subs_starts, subs_ends = calculus.signal.read_subs(input_subtitle_filepath, target_fs=self.fs, encoding=self.encoding)
                 subs_signal = tf.constant(subs_signal, dtype=tf.float32)
                 # low-pass filtering to create dynamic the binary signal (and avoid numerical instability during interpolation)
                 subs_signal = calculus.signal.tf_1d_gaussian_filtering(subs_signal, kernel_size=ksize)

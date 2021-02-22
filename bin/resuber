@@ -75,6 +75,8 @@ def get_parser():
                         , dest="min_clusters_distance"
                         , type=float
                         , help=utils.args.get_docstring_option_help(ReSuber, "min_clusters_distance"))
+    parser.add_argument('--encoding'
+                        , help=utils.args.get_docstring_option_help(ReSuber, "encoding"))
     parser.add_argument('--version'
                         , action='version'
                         , version=utils.args.get_version())
