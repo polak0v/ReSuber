@@ -256,13 +256,15 @@ class ReSuber():
             # reading and pre-processing vocal
             vocal, _ = calculus.signal.read_audio(vocal_filepath, target_fs=self.fs)
             vocal = tf.constant(vocal, dtype=tf.float32)
-            ksize = max(10, int(500. * (self.fs / 1000.)))
-            vocal_preprocessed = calculus.signal.filter_audio(vocal, kernel_size=ksize)
+            ksize_audio = max(10, int(2000. * (self.fs / 1000.)))
+            vocal_preprocessed = calculus.signal.filter_audio(vocal, kernel_size=ksize_audio)
             # low-pass filtering to create dynamic for the binary signal (and avoid numerical instability during interpolation)
+            ksize = max(10, int(500. * (self.fs / 1000.)))
             vocal_preprocessed = calculus.signal.tf_1d_gaussian_filtering(vocal_preprocessed, kernel_size=ksize)
 
             for input_subtitle_filepath in self.input_subtitle_filepaths[i]:
                 output_subtitle_filepath = os.path.join(self.output_dir, os.path.basename(input_subtitle_filepath + ".resubed.srt"))
+                print("\tsubtitle {}".format(output_subtitle_filepath))
                 # reading subtitles signal
                 subs_signal, subs, subs_starts, subs_ends = calculus.signal.read_subs(input_subtitle_filepath, target_fs=self.fs, encoding=self.encoding)
                 subs_signal = tf.constant(subs_signal, dtype=tf.float32)
@@ -290,11 +292,11 @@ class ReSuber():
                 # subtitle re-synchronization and save
                 subs_resynced = calculus.signal.resync_subs(best_params, subs, mask=mask_subs, max_duration=subs_signal.shape[0], fs=self.fs)
                 calculus.signal.add_credits(subs_resynced)
-                calculus.signal.save_subs(subs_resynced, output_subtitle_filepath)
+                calculus.signal.save_subs(subs_resynced, output_subtitle_filepath, encoding=self.encoding)
                 if self.debug:
                     output_label_filepath = os.path.join(self.debug_dir, os.path.basename(input_subtitle_filepath[:-4] + "_resubed" + ".txt"))
                     calculus.signal.save_labels(subs_resynced, output_label_filepath)
                 
-                print("\tsubtitle {} - params: {}".format(output_subtitle_filepath, best_params))
+                print("\tparams: {}".format(best_params))
         print("###")
         print("ReSuber duration {} s".format(time.time() - start_time))

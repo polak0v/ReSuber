@@ -59,6 +59,8 @@ def read_subs(input_sub_filepath, target_fs=1000, encoding="utf-8"):
             filepath to the input subtitle SRT file
         target_fs : float
             target sampling rate in Hz (default: 1 kHz)
+        encoding : string
+            encoding to choose (default: utf-8)
 
     Returns
     -------
@@ -90,7 +92,7 @@ def read_subs(input_sub_filepath, target_fs=1000, encoding="utf-8"):
 
     return subs_signal, subs, starts, ends
 
-def save_subs(subs, output_sub_filepath):
+def save_subs(subs, output_sub_filepath, encoding="utf-8"):
     """Save a subtitle file.
 
     Parameters
@@ -99,8 +101,10 @@ def save_subs(subs, output_sub_filepath):
             subtitle object with all the subtitle events
         output_sub_filepath : string, required
             output filepath to the subtitle SRT file
+        encoding : string
+            encoding to choose (default: utf-8)
     """
-    subs.save(output_sub_filepath)
+    subs.save(output_sub_filepath, encoding=encoding)
 
 def save_labels(subs, output_label_filepath):
     """Save a subtitle file into an audacity label TXT file.
@@ -307,7 +311,12 @@ def add_credits(subs):
     -------
         `pysubs2.ssafile.SSAFile` : subtitle object with credits appended at the end
     """
-    subs[-1].text = subs[-1].text + "\n\n*** Re-synchronized with ReSuber, check the github page https://github.com/polak0v/ReSuber! ***"
+
+    start = int(subs[-1].end) + 5000
+    end = start + 5000
+    text = "Re-synchronized with <i>ReSuber</i>.\nCheck the github page <font color=\"blue\"> https://github.com/polak0v/ReSuber </font> !"
+    event = pysubs2.SSAEvent(start=start, end=end, text=text)
+    subs += [event]
 
     return subs
 

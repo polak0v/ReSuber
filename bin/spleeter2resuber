@@ -20,7 +20,7 @@ start_time = time.time()
 
 # parameters
 codecs = []
-container = "mp4"
+container = "mkv"
 input_dir = "./"
 # Get the list of all files in directory tree at given path
 all_videos = utils.dir.get_files_list(dir=input_dir, recursive=True, ext=container)
@@ -38,7 +38,7 @@ for file in files:
 
 # loop to all videos files
 for input_file in all_videos:
-    input_audio = os.path.join(debug_dir, " ".join(os.path.basename(input_file).split(".")[:-1]) + "_original.wav")
+    input_audio = os.path.join(debug_dir, ".".join(os.path.basename(input_file).split(".")[:-1]) + "_original.wav")
     output_vocal = os.path.join(output_dir, ".".join(os.path.basename(input_file).split(".")[:-1]) + ".wav")
     if not os.path.exists(output_vocal):
         # extract the audio stream from movie
