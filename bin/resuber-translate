@@ -1,0 +1,113 @@
+#!/usr/bin/python3
+# coding: utf8
+
+"""ReSuber {} - Automatic tool to re-synchronize SRT subtitles given a vocal WAV file from a movie.
+
+ReSuber is an automatic tool to re-synchronize any SRT subtitles, using its corresponding vocal audio WAV stream from a movie.
+It uses machine learning techniques to perform language agnostic re-synchronization, by checking the signal correlation
+between the vocal audio stream and the corrected subtitle signal.
+
+License MIT.
+
+See https://github.com/polak0v/ReSuber for source code and documentation.
+"""
+
+import os
+import glob
+import pysubs2
+import argparse
+import time
+import shutil
+import urllib.request
+import urllib.parse
+import json
+import resuber.utils as utils
+import resuber.calculus as calculus
+
+def translate(url, text):
+    response = urllib.request.urlopen(url + urllib.parse.quote(text))
+    translated_text = json.loads(response.read())
+    translated_text = " ".join([t[0] for t in translated_text[0]])
+
+    return translated_text
+
+def run(input_dir = "/home/ltetrel/Downloads/The Hunchback Of Notre Dame II (2002)/", reference_language = "eng", target_language = "fr", encoding = "utf8"):
+
+    url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl={reference_language}&tl={target_language}&dt=t&q="
+    separator = "\n"
+
+    # making output dir
+    output_dir = os.path.join(input_dir, "resuber-translate")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # copying all subtitles files into output dir
+    files = glob.iglob(os.path.join(input_dir, "*.srt"))
+    for file in files:
+        if os.path.isfile(file):
+            shutil.copy2(file, output_dir)
+    
+    # reading reference language (the text to be taken) and target timestamps (the timestamps to be used)
+    ref_lang_sub_path = [f for f in glob.iglob(os.path.join(output_dir, "*." + reference_language + ".srt"))][0]
+    output_sub_path = ref_lang_sub_path + "." + target_language +".srt"
+    output_sub = pysubs2.SSAFile()
+
+    ref_lang_sub = pysubs2.load(ref_lang_sub_path, encoding=encoding)
+    translated_text_list = []
+    text_list = []
+    char_count = 0
+    ii = 0
+    for sub in ref_lang_sub:
+        print(f'Translating {ref_lang_sub_path}: {ii}/' + str(len(ref_lang_sub.events) - 1), end='\r')
+        sub_text = sub.text
+        text_list += [sub_text.replace("\\N", "\n").replace("\n", " ")]
+        char_count = char_count + len(sub_text)
+        # request when there is at least 4500 characters
+        if char_count > 4500:
+            translated_text = translate(url, separator.join(text_list))
+            translated_text_list += [translated_text.split(separator)]
+            text_list = []
+            char_count = 0
+        print("", end='\b')
+        ii = ii + 1
+    # translate last batch
+    translated_text = translate(url, separator.join(text_list))
+    translated_text_list += [translated_text.split(separator)]
+
+    # writing translated with final list
+    translated_text_list = [item for sublist in translated_text_list for item in sublist]
+    ii = 0
+    for sub in ref_lang_sub:
+        output_sub.insert(ii, pysubs2.SSAEvent(start=sub.start, end=sub.end, text=translated_text_list[ii]))
+        ii = ii + 1
+
+    print(f"\nSaving output to {output_sub_path}")
+    calculus.signal.add_credits(output_sub)
+    calculus.signal.save_subs(output_sub, output_sub_path, encoding=encoding)
+
+def get_parser():
+    """Get the parser.
+    
+    Returns
+    -------
+        `argparse.ArgumentParser` : the argument parser
+    """
+    parser = argparse.ArgumentParser(description=__doc__.format(utils.args.get_version()), formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--input-dir'
+                        , dest="input_dir")
+    parser.add_argument('--ref-lang'
+                        , dest="reference_language")
+    parser.add_argument('--tgt-lang'
+                        , dest="target_language")
+    parser.add_argument('--encoding'
+                        , dest="encoding")
+    
+    return parser
+
+def main():
+    args = get_parser().parse_args()
+    args = utils.args.remove_none_args(args)
+    run(**vars(args))
+
+if __name__ == '__main__':
+    main()
