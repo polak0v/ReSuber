@@ -292,7 +292,7 @@ class ReSuber():
                 # subtitle re-synchronization and save
                 subs_resynced = calculus.signal.resync_subs(best_params, subs, mask=mask_subs, max_duration=subs_signal.shape[0], fs=self.fs)
                 calculus.signal.add_credits(subs_resynced)
-                calculus.signal.save_subs(subs_resynced, output_subtitle_filepath, encoding=self.encoding)
+                calculus.signal.save_subs(subs_resynced, output_subtitle_filepath, encoding="utf-8")
                 if self.debug:
                     output_label_filepath = os.path.join(self.debug_dir, os.path.basename(input_subtitle_filepath[:-4] + "_resubed" + ".txt"))
                     calculus.signal.save_labels(subs_resynced, output_label_filepath)
