@@ -299,7 +299,7 @@ def resync_subs(params, subs, max_duration, mask=None, fs=1000):
 
     return subs
 
-def add_credits(subs):
+def add_credits(subs, translated=False):
     """Add credits to the software at the end of the subtitle SRT file.
 
     Parameters
@@ -314,7 +314,10 @@ def add_credits(subs):
 
     start = int(subs[-1].end) + 5000
     end = start + 5000
-    text = "Re-synchronized with <i>ReSuber</i>.\nCheck the github page <font color=\"blue\"> https://github.com/polak0v/ReSuber </font> !"
+    if translated:
+        text = "Translated and corrected with <i>ReSuber</i>.\nCheck the github page <font color=\"blue\"> https://github.com/polak0v/ReSuber </font> !"
+    else:
+        text = "Re-synchronized with <i>ReSuber</i>.\nCheck the github page <font color=\"blue\"> https://github.com/polak0v/ReSuber </font> !"
     event = pysubs2.SSAEvent(start=start, end=end, text=text)
     subs += [event]
 
