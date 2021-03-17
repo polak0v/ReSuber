@@ -34,8 +34,8 @@ def run(input_dir = "./", reference_language = "fr", target_timestamps = "eng", 
             shutil.copy2(file, output_dir)
     
     # reading reference language (the text to be taken) and target timestamps (the timestamps to be used)
-    ref_lang_sub_path = [f for f in glob.iglob(os.path.join(output_dir, "*." + reference_language + ".srt"))][0]
-    tgt_time_sub_path = [f for f in glob.iglob(os.path.join(output_dir, "*." + target_timestamps + ".srt"))][0]
+    ref_lang_sub_path = glob.glob(os.path.join(output_dir, "*." + reference_language + ".srt"))[0]
+    tgt_time_sub_path = glob.glob(os.path.join(output_dir, "*." + target_timestamps + ".srt"))[0]
     output_sub_path = ref_lang_sub_path + ".resubed.srt"
     output_sub = pysubs2.SSAFile()
 
