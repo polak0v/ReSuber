@@ -49,6 +49,12 @@ def get_parser():
     parser.add_argument('--fs'
                         , type=float
                         , help=utils.args.get_docstring_option_help(ReSuber, "fs"))
+    parser.add_argument('--start'
+                        , type=str
+                        , help=utils.args.get_docstring_option_help(ReSuber, "start"))
+    parser.add_argument('--end'
+                        , type=str
+                        , help=utils.args.get_docstring_option_help(ReSuber, "end"))
     parser.add_argument('--range-weight'
                         , dest="range_weight"
                         , nargs='*'

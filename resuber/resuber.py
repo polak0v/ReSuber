@@ -40,6 +40,14 @@ class ReSuber():
             encoding for subtitles (default: utf-8)
         fs : float
             sampling rate in Hz
+        start_ms : int
+            Minimum timestamp (ms) to process (default: 0)
+        end_ms : int
+            Maximum timestamp (ms) to process (default: 90060990)
+        start_idx : int
+            Minimum timestamp (sample) to process (default: 0)
+        end_idx : int
+            Maximum timestamp (sample) to process (default: 90060990 * fs/1000)
         range_weight : `list` [float]
             range allowed for the weight parameter during rough exploration
         range_offset : `list` [float]
@@ -65,6 +73,8 @@ class ReSuber():
                 , vocals=None
                 , encoding="utf-8"
                 , fs=100
+                , start='0:0:0.0'
+                , end='24:60:60.99'
                 , range_weight=[-1e-2, 1e-2]
                 , range_offset=[-5000., 5000.]
                 , fix_weight=False
@@ -92,6 +102,10 @@ class ReSuber():
                 input filename(s) to the SRT subtitle file(s) per WAV vocal file (default: ./*.srt)
             fs : float
                 sampling rate in Hz (default: 100 Hz)
+            start : string
+                Minimum timestamp to process with format 'h:m:s.ms' (default: '0:0:0.0')
+            end : string
+                Maximum timestamp to process with format 'h:m:s.ms (default: '24:60:60.99')
             range_weight : `list` [float]
                 range allowed for the weight parameter during rough exploration (default: [-1e-2, 1e-2])
             range_offset : `list` [float]
@@ -115,6 +129,8 @@ class ReSuber():
         self.vocal_names = vocals
         self.encoding = encoding
         self.fs = fs
+        self.start = start
+        self.end = end
         self.range_weight = range_weight
         self.range_offset = range_offset
         self.w_trainable = not fix_weight
@@ -123,6 +139,7 @@ class ReSuber():
         self.max_shift = max_shift
         self.min_clusters_distance = min_clusters_distance
         
+        self.set_start_end_ms()
         self.set_input_dir()
         self.set_output_dir()
         self.set_subtitles_and_vocals()
@@ -142,6 +159,8 @@ class ReSuber():
                 + "\n\t vocals : {}".format(self.vocal_names) \
                 + "\n\t encoding : {}".format(self.encoding) \
                 + "\n\t fs : {}".format(self.fs) \
+                + "\n\t start : {}".format(self.start) \
+                + "\n\t end : {}".format(self.end) \
                 + "\n\t range-weight : {}".format(self.range_weight) \
                 + "\n\t range-offset : {}".format(self.range_offset) \
                 + "\n\t fix-weight : {}".format(not self.w_trainable) \
@@ -172,6 +191,21 @@ class ReSuber():
                 debug_sub_dir = os.path.join(self.debug_dir, os.path.basename(input_subtitle_filepath[:-4]))
                 if not os.path.isdir(debug_sub_dir):
                     os.makedirs(debug_sub_dir)
+
+    def set_start_end_ms(self):
+        """Utility to convert from date string format into int (ms)"""
+        time_start_list = self.start.split(":")
+        time_end_list = self.end.split(":")
+        start_ms = int(float(time_start_list[0])*60*60*1000 + float(time_start_list[1])*60*1000 + float(time_start_list[2])*1000)
+        end_ms = int(float(time_end_list[0])*60*60*1000 + float(time_end_list[1])*60*1000 + float(time_end_list[2])*1000)
+        if start_ms < 0 | start_ms > 90060990:
+            start_ms = 0
+        if end_ms < 0 | end_ms > 90060990:
+            end_ms = 90060990
+        self.start_ms = start_ms
+        self.end_ms = end_ms
+        self.start_idx = int(self.start_ms * (self.fs/1000))
+        self.end_idx = int(self.end_ms * (self.fs/1000))
 
     def subtitle_group(self):
         """Group all the subtitle file paths by their name. """
@@ -275,11 +309,17 @@ class ReSuber():
                 mask_subs = None
                 if self.refine_mode == "mask":
                     mask_subs = calculus.signal.get_subs_mask(subs_signal, subs_starts, subs_ends, max_duration_allowed=self.min_clusters_distance, fs=self.fs)
+                    mask_subs = mask_subs[self.start_idx:self.end_idx]
                 # numerical optimization
                 debug_sub_dir = ""
                 if self.debug:
                     debug_sub_dir = os.path.join(self.debug_dir, os.path.basename(input_subtitle_filepath[:-4]))
-                best_params = calculus.ml.fit(subs_signal, vocal_preprocessed
+                # start and stop idx, in number of samples
+                vocal_preprocessed = vocal_preprocessed[self.start_idx:self.end_idx]
+                subs_signal = subs_signal[self.start_idx:self.end_idx]
+                # gradient descent fitting
+                best_params = calculus.ml.fit(subs_signal
+                                            , vocal_preprocessed
                                             , rigid=self.refine_mode == "no"
                                             , mask=mask_subs
                                             , max_offset_range=self.max_shift
@@ -290,7 +330,12 @@ class ReSuber():
                                             , fs=self.fs
                                             , debug_dir=debug_sub_dir)
                 # subtitle re-synchronization and save
-                subs_resynced = calculus.signal.resync_subs(best_params, subs, mask=mask_subs, max_duration=subs_signal.shape[0], fs=self.fs)
+                subs_resynced = calculus.signal.resync_subs(best_params
+                                                            , subs
+                                                            , mask=mask_subs
+                                                            , fs=self.fs
+                                                            , cut_start=self.start_ms
+                                                            , cut_end=self.end_ms)
                 calculus.signal.add_credits(subs_resynced)
                 calculus.signal.save_subs(subs_resynced, output_subtitle_filepath, encoding="utf-8")
                 if self.debug:

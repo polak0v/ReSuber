@@ -257,7 +257,7 @@ def get_subs_mask(subs_signal, starts, ends, max_duration_allowed=10000, fs=1000
 
     return np.cumsum(mask_subs_signal)
 
-def resync_subs(params, subs, max_duration, mask=None, fs=1000):
+def resync_subs(params, subs, mask=None, fs=1000, cut_start=0, cut_end=90060990):
     """Re-synchronize the subtitle object given the transformation parameters.
 
     Parameters
@@ -266,18 +266,21 @@ def resync_subs(params, subs, max_duration, mask=None, fs=1000):
             transformation parameters
         subs : `pysubs2.ssafile.SSAFile`, required
             subtitle object with all the subtitle events
-        max_duration : float, required
-            maximum time allowed of a subtitle event (should be the duration of the corresponding audio signal)
         mask : `np.array` [float]
             mask with cluster id values for each sample in the input subtitle signal
         fs : float
             Sampling rate in Hz (default: 1 kHz)
+        cut_start : int
+            Minimum timestamp value (ms) to include (default: 0)
+        cut_end : int
+            Maximum timestamp value (ms) to include (default: 90060990)
     
     Returns
     -------
         `pysubs2.ssafile.SSAFile` : subtitle object with all the re-synchronized subtitle events
     """
     target_ratio = fs / 1000.
+    max_duration = int(subs[-1].end + 3600000)
     for sub, i in zip(subs, range(len(subs))):
         input_start = int(sub.start * target_ratio)
         input_end = int(sub.end * target_ratio)
@@ -293,13 +296,14 @@ def resync_subs(params, subs, max_duration, mask=None, fs=1000):
                 idx_end = int(mask[input_end])
             start = start + params[2][idx_start]
             end = end + params[2][idx_end]
-        # updating subtitle file
-        subs[i].start = min(max(0, int(start/target_ratio)), max_duration/target_ratio)
-        subs[i].end = min(max(0, int(end/target_ratio)), max_duration/target_ratio)
+        if (cut_start < sub.start) & (sub.end < cut_end):
+            # updating subtitle file
+            subs[i].start = min(max(0, int(start/target_ratio)), max_duration)
+            subs[i].end = min(max(0, int(end/target_ratio)), max_duration)
 
     return subs
 
-def add_credits(subs, translated=False):
+def add_credits(subs):
     """Add credits to the software at the end of the subtitle SRT file.
 
     Parameters
@@ -314,10 +318,7 @@ def add_credits(subs, translated=False):
 
     start = int(subs[-1].end) + 5000
     end = start + 5000
-    if translated:
-        text = "Translated and corrected with <i>ReSuber</i>.\nCheck the github page <font color=\"blue\"> https://github.com/polak0v/ReSuber </font> !"
-    else:
-        text = "Re-synchronized with <i>ReSuber</i>.\nCheck the github page <font color=\"blue\"> https://github.com/polak0v/ReSuber </font> !"
+    text = "Processed with <i>ReSuber</i>.\nCheck the github page <font color=\"blue\"> https://github.com/polak0v/ReSuber </font> !"
     event = pysubs2.SSAEvent(start=start, end=end, text=text)
     subs += [event]
 
@@ -342,7 +343,7 @@ if __name__ == '__main__':
     # get mask
     mask = get_subs_mask(subs_signal, subs_starts, subs_ends, max_duration_allowed=100, fs=fs)
     # resyncs
-    resynced_subs = resync_subs([1., 100.*(fs/1000.)], subs, max_duration=subs_signal.shape[0], fs=fs)
+    resynced_subs = resync_subs([1., 100.*(fs/1000.)], subs, fs=fs)
     # credits
     add_credits(subs)
     # save audacity label
