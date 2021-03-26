@@ -13,7 +13,6 @@ License MIT.
 See https://github.com/polak0v/ReSuber for source code and documentation.
 """
 
-#!/usr/bin/python3
 import re
 import glob
 import os
