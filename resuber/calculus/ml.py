@@ -27,7 +27,7 @@ def plot_cost(cost, init_params, range_min, range_max, debug_dir):
     fig.write_html('{}/cost_2d.html'.format(debug_dir))
 
 def plot_data(model, x, target, debug_dir):
-    """Plot the cost image for the two parameters (weight and offset).
+    """Plot the cost image for the two parameters (weight, offset and non-rigid offsets).
 
     Parameters
     ----------
@@ -40,14 +40,27 @@ def plot_data(model, x, target, debug_dir):
         debug_dir : string, required
             directory path where to store debugging information (cost image, iterations and model output)
     """
-    resamp_idx = int(5e4)
+    resamp_idx = int(6e4)
+    y = model(x).numpy()[:resamp_idx]
     x = x.numpy()[:resamp_idx]
-    y = model(x).numpy()
     t = target.numpy()[:resamp_idx]
+    
+    plotly_inputs = dict(input=x, model_output=y, target=t)
+    plotly_outputs = ['input', 'model_output', 'target']
+    if len(model.training_vars) > 2:
+        if model.mask is None:
+            B = model.B.numpy()
+        else:
+            B = tf.zeros(len(model.mask))
+            for ii in len(model.B.numpy()):
+                current_mask = tf.cast(tf.math.equal(model.mask, ii), dtype=tf.float32)
+                B = B + current_mask * model.B.numpy()[ii]
+        B = B[:resamp_idx]
+        plotly_inputs["B"] = B
+        plotly_outputs += ['offsets']
+    
     # cost function over params
-    fig = px.line(dict(input=x, model_output=y, target=t)
-                    , y=['input', 'model_output', 'target']
-                    , labels={'x':'time (ms)', 'y':'magnitude'})
+    fig = px.line(x=plotly_inputs, y=plotly_outputs, labels={'x':'time (ms)', 'y':'magnitude'})
     fig.write_html('{}/data.html'.format(debug_dir))
 
 def plot_loss(losses, debug_dir):
@@ -124,7 +137,7 @@ def train(model, x, target, l=0.):
     """
     with tf.GradientTape() as tape:
         loss_value = loss(model(x), target, dv=False)
-        if l > 0.:
+        if (l > 0) & (len(model.training_vars) > 2):
             loss_value = loss_value + l*regularizer(model)
     return loss_value, tape.gradient(loss_value, model.training_vars)
 
@@ -152,8 +165,8 @@ def rough_exploration(model, x, target, init_params, range_min, range_max, debug
     -------
         `list` [float] : optimal transformation parameters (weight and offset)
     """
-    weights = [np.linspace(init_params[0] + range_min[0], init_params[0] + range_max[0], 50)
-            , np.linspace(init_params[1] + range_min[1], init_params[1] + range_max[1], 50)]
+    weights = [np.linspace(init_params[0] + range_min[0], init_params[0] + range_max[0], 20)
+            , np.linspace(init_params[1] + range_min[1], init_params[1] + range_max[1], 20)]
     cost = np.zeros((len(weights[0]), len(weights[1])), dtype=np.float32)
 
     # loop on all parameters combination
@@ -205,19 +218,19 @@ def fit(x, target, rigid=True, mask=None, max_offset_range=None, range_weight=[-
     # learning parameters (weight, offset, non-rigid bias) and optimizers
     lr_w = 1e-6
     lr_b = 1e0
-    lr_B = lr_b
+    lr_B = lr_b * 1e2
     opt_w = tf.keras.optimizers.Adam(learning_rate=lr_w)
     opt_b = tf.keras.optimizers.Adam(learning_rate=lr_b)
     opt_B = tf.keras.optimizers.Adam(learning_rate=lr_B)
     # iterations parameters
-    max_iters = 1000
+    max_iters = 5000
     min_iters = int(0.05 * max_iters)
     min_loss_diff = 1e-9
     step = 0
     loss_diff = 1e9
     losses = [1e9]
     # regularizer parameter (for non-rigid)
-    l = 0
+    l = 10
     # number of cluster (masked non-rigid) or number of elements (fully non-rigid)
     num_clusters = tf.shape(x)[-1] if (mask is None) & (rigid == False) else None
     # Spatial transformer model
@@ -235,18 +248,21 @@ def fit(x, target, rigid=True, mask=None, max_offset_range=None, range_weight=[-
             loss, grads = train(model, x, target, l)
             if debug_dir:
                 if step % 10 == 0:
-                    grads_no_none = np.array([grads[ii] for ii in range(len(grads)) if grads[ii]])
-                    # grad_means = [np.mean(grads[ii]) for ii in range(len(grads)) if grads[ii]]
+                    grads_no_none = []
+                    for ii in range(len(grads)):
+                        if grads[ii] is not None:
+                            grad_is_nan = tf.math.reduce_any(tf.math.is_nan(grads[ii]))
+                            if not grad_is_nan:
+                                grads_no_none += [tf.reduce_mean(grads[ii])]
                     if rigid:
                         print("\t\tnon-rigid - Step: {} - loss: {} - Params: W {}, b {}".format(step, loss.numpy(), model.W.numpy(), model.b.numpy()))
-                        print("\t\t\tGrads: {}, norm {}".format(np.mean(grads_no_none), tf.linalg.norm(tf.concat(grads_no_none, axis=-1))))
                     else:
                         print("\t\tnon-rigid - Step: {} - loss: {} - Params: W {}, b {}, mean B {}".format(step
                                                                                                     , loss.numpy()
                                                                                                     , model.W.numpy()
                                                                                                     , model.b.numpy()
                                                                                                     , np.mean(model.B.numpy())))
-                        print("\t\t\tGrads: {}, norm {}".format(np.mean(grads_no_none), tf.linalg.norm(tf.concat(grads_no_none, axis=-1))))
+                    print("\t\t\tGrads: {}, norm {}".format(np.mean(grads_no_none), tf.linalg.norm(tf.concat(grads_no_none, axis=0))))
             if w_trainable & b_trainable:
                 opt_w.apply_gradients(zip(grads[:1], model.training_vars[:1]))
                 opt_b.apply_gradients(zip(grads[1:2], model.training_vars[1:2]))

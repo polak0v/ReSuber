@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # coding: utf8
 
-"""ReSuber {} - Automatic toolbox to re-synchronize SRT subtitles given a vocal WAV file from a movie.
+"""ReSuber {} - Software toolbox to re-synchronize and/or translate SRT subtitles from a movie.
 
 ReSuber is an automatic tool to re-synchronize any SRT subtitles, using its corresponding vocal audio WAV stream from a movie.
 It uses machine learning techniques to perform language agnostic re-synchronization, by checking the signal correlation

@@ -11,7 +11,7 @@ setup(name='resuber',
       author_email='the_polakov@protonmail.com',
       license='MIT',
       packages=['resuber'],
-      scripts=['bin/resuber', 'bin/spleeter2resuber', 'bin/resuber-translate', 'bin/resuber-move'],
+      scripts=['bin/resuber', 'bin/spleeter2resuber', 'bin/resuber-translate', 'bin/resuber-move', 'bin/resuber-merge'],
       install_requires=['tensorflow-gpu==2.3.0', 'scipy==1.4.1', 'matplotlib==3.1.2'],
       include_package_data=True,
       zip_safe=False)

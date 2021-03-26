@@ -1,0 +1,183 @@
+#!/usr/bin/python3
+# coding: utf8
+
+"""ReSuber {} - Software toolbox to re-synchronize and/or translate SRT subtitles from a movie.
+
+ReSuber is an automatic tool to re-synchronize any SRT subtitles, using its corresponding vocal audio WAV stream from a movie.
+It uses machine learning techniques to perform language agnostic re-synchronization, by checking the signal correlation
+between the vocal audio stream and the corrected subtitle signal.
+It also provide different utilities, including automatic translation of SRT subtitles with the Google Cloud Translation API (no key required).
+
+License MIT.
+
+See https://github.com/polak0v/ReSuber for source code and documentation.
+"""
+
+#!/usr/bin/python3
+import re
+import glob
+import os
+import sys
+import subprocess
+
+def any_(arr, match):
+    return any([elem == match for elem in arr])
+
+def all_(arr, match):
+    return all([elem == match for elem in arr])
+
+def has_lang_srt(input_file, lang="fr"):
+    filename = ".".join(input_file.split(".")[:-1])
+    subs = glob.glob(glob.escape(filename) + f".{lang}.srt")
+    return subs if subs else False
+
+def run(input_dir=".", output_container="mkv"):
+    # parameters
+    output_dir = "."
+    logpath = output_dir + '/python-ffmpeg.log'
+
+    # Get the list of all files in directory tree at given path
+    listOfFiles = list()
+    for (dirpath, dirnames, filenames) in os.walk(input_dir):
+        listOfFiles += [os.path.join(dirpath, input_file) for input_file in filenames]
+
+    # start transcoding
+    for input_file in listOfFiles:
+        #initializing parameters
+        video_decoder = []
+        video_encoder = []
+        audio_encoder = []
+        sub_char_encode = []
+        sub_encoder = []
+        subfiles = []
+        maps = ["-map", "0:v", "-map", "0:a", "-map", "0:s?"]
+        metadata_lang = []
+        # ignoring file that are not videos
+        ext = input_file.split(".")[-1]
+        if (ext == "mp4") | (ext == "mkv") | (ext == "avi"):
+            # preparing output file
+            output_file = output_dir + "/" + input_file[len(input_dir) + 1:-len(ext) -1] + "_merged." + output_container
+
+            ### video codec
+            process = subprocess.Popen(["ffprobe"
+                                        , "-v"
+                                        , "error"
+                                        , "-select_streams"
+                                        , "v"
+                                        , "-show_entries"
+                                        , "stream=codec_name"
+                                        , "-of"
+                                        , "default=noprint_wrappers=1:nokey=1"
+                                        , input_file], stdout=subprocess.PIPE)
+            video_codec = process.stdout.read().decode("utf-8").split("\n")[:-1]
+            if any_(video_codec, "hevc"):
+                video_decoder = ["-vsync", "0", "-hwaccel", "cuvid", "-c:v", "hevc_cuvid"]
+                video_encoder = ["-c:v", "h264_nvenc"]
+            elif any_(video_codec, "mpeg4"):
+                video_decoder = ["-vsync", "0", "-hwaccel", "cuvid", "-c:v", "mpeg4_cuvid"]
+                video_encoder = ["-c:v", "h264_nvenc"]
+
+            ### audio codec
+            process = subprocess.Popen(["ffprobe"
+                                        , "-v"
+                                        , "error"
+                                        , "-select_streams"
+                                        , "a"
+                                        , "-show_entries"
+                                        , "stream=codec_name"
+                                        , "-of"
+                                        , "default=noprint_wrappers=1:nokey=1"
+                                        , input_file], stdout=subprocess.PIPE)
+            audio_codec = process.stdout.read().decode("utf-8").split("\n")[:-1]
+            if not all_(audio_codec, "aac"):
+                audio_encoder = ["-c:a", "aac", "-ac", "2", "-b:a", "128k"]
+
+            ### sub codec
+            process = subprocess.Popen(["ffprobe"
+                                        , "-v"
+                                        , "error"
+                                        , "-select_streams"
+                                        , "s"
+                                        , "-show_entries"
+                                        , "stream=codec_name"
+                                        , "-of"
+                                        , "default=noprint_wrappers=1:nokey=1"
+                                        , input_file], stdout=subprocess.PIPE)
+            sub_codec = process.stdout.read().decode("utf-8").split("\n")[:-1]
+            if not all_(sub_codec, "subrip"):
+                sub_encoder = ["-c:s", "srt"]
+            fr_srt = has_lang_srt(input_file)
+            if fr_srt:
+                # sub_char_encode = ["-sub_charenc", "cp1252"]
+                sub_char_encode = ["-sub_charenc", "ISO-8859-15"]
+                map_no = 1
+                stream_no = 0
+                # disable previous subtitle disposition
+                for _ in range(len(sub_codec)):
+                    metadata_lang += [f"-disposition:s:s:{stream_no}", "0"]
+                    stream_no += 1
+                for subfile in fr_srt: 
+                subfiles += ["-i", subfile] 
+                maps += ["-map", str(map_no)]
+                metadata_lang += [f"-metadata:s:s:{stream_no}", "language=fre", f"-disposition:s:s:{stream_no}", "default"]
+                map_no += 1
+                stream_no += 1
+
+                eng_srt = has_lang_srt(input_file, lang="eng")
+                if eng_srt:
+                    for subfile in eng_srt: 
+                        subfiles += ["-i", subfile] 
+                        maps += ["-map", str(map_no)]
+                        metadata_lang += [f"-metadata:s:s:{stream_no}", "language=eng"]
+                        map_no += 1
+                        stream_no += 1
+            # proper encoding (for french) here
+    # FILE=*.fr.srt; file -i $FILE;
+    # iconv -f ISO-8859-15 -t UTF-8 input.fr.srt -o output.fr.srt
+    # iconv -f WINDOWS-1258 -t UTF-8 input.fr.srt -o output.fr.srt
+    # to check file : iconv -f utf-8 -t ucs-4 out.srt -o /dev/null
+    # mv output.fr.srt $FILE
+            # creating ffmpeg command
+            ffmpeg_cmd = ["ffmpeg", "-y"]
+            # decoders
+            ffmpeg_cmd += video_decoder
+            # inputs
+            ffmpeg_cmd += ["-i", input_file] + sub_char_encode + subfiles
+            # mapping
+            ffmpeg_cmd += maps + ["-c", "copy"]
+            # language metadata
+            ffmpeg_cmd += metadata_lang
+            # encoders
+            ffmpeg_cmd += video_encoder + audio_encoder + sub_encoder
+            # output
+            ffmpeg_cmd += [output_file]
+            print(" ".join( [cmd.replace(" ", "\ ").replace("(", "\\(").replace(")", "\\)") for cmd in ffmpeg_cmd] ))
+
+            ffmpeg_process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE)
+            logs = subprocess.Popen(["tee", "-a", logpath], stdin=ffmpeg_process.stdout, stdout=subprocess.PIPE)
+            output = logs.communicate()[0]
+            # for line in ffmpeg_process.stdout:
+            #     sys.stdout.write(line)
+
+def get_parser():
+    """Get the parser.
+    
+    Returns
+    -------
+        `argparse.ArgumentParser` : the argument parser
+    """
+    parser = argparse.ArgumentParser(description=__doc__.format(utils.args.get_version()), formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--input-dir'
+                        , dest="input_dir")
+    parser.add_argument('--output_container'
+                        , dest="output_container")
+    
+    return parser
+
+def main():
+    args = get_parser().parse_args()
+    args = utils.args.remove_none_args(args)
+    run(**vars(args))
+
+if __name__ == '__main__':
+    main()
