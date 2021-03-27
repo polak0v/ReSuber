@@ -1,0 +1,6 @@
+1.1	2.9	Un magicien n'est jamais en retard,
+3.4	4.35	Frodon Sacquet.
+5.5	6.8	Ni jamais en avance.
+7.1	9.8	Il arrive à point nommé.
+11.8	13.8	Processed with <i>ReSuber</i>.
+Check the github page <font color="blue"> https://github.com/polak0v/ReSuber </font> !

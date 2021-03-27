@@ -323,28 +323,3 @@ def add_credits(subs):
     subs += [event]
 
     return subs
-
-if __name__ == '__main__':
-    audio_filepath = "examples/audio_example.wav"
-    sub_filepath = "examples/audio_example.srt"
-    label_filepath = "examples/audio_example.txt"
-
-    # reading signals
-    fs = 100
-    vocal, _ = read_audio(audio_filepath, target_fs=fs)
-    subs_signal, subs, subs_starts, subs_ends = read_subs(sub_filepath, target_fs=fs)
-    # preprocessing audio
-    vocal_preprocessed = filter_audio(vocal, threshold=1000, kernel_size=10)
-    # rescale to make sure the two signals have the same size
-    vocal_preprocessed, subs_signal = rescale_audio_subs(vocal_preprocessed, subs_signal)
-    # low-pass filtering to create dynamic for the signals (and avoid numerical instability during interpolation)
-    subs_signal = tf_1d_gaussian_filtering(subs_signal, kernel_size=50)
-    vocal_preprocessed = tf_1d_gaussian_filtering(vocal_preprocessed, kernel_size=50)
-    # get mask
-    mask = get_subs_mask(subs_signal, subs_starts, subs_ends, max_duration_allowed=100, fs=fs)
-    # resyncs
-    resynced_subs = resync_subs([1., 100.*(fs/1000.)], subs, fs=fs)
-    # credits
-    add_credits(subs)
-    # save audacity label
-    save_labels(subs, label_filepath)
