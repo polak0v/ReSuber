@@ -1,0 +1,21 @@
+1
+00:00:00,870 --> 00:00:02,688
+Un magicien n'est jamais en retard,
+
+2
+00:00:03,193 --> 00:00:04,152
+Frodon Sacquet.
+
+3
+00:00:05,314 --> 00:00:06,627
+Ni jamais en avance.
+
+4
+00:00:06,930 --> 00:00:09,657
+Il arrive à point nommé.
+
+5
+00:00:11,657 --> 00:00:13,657
+Processed with <i>ReSuber</i>.
+Check the github page <font color="blue"> https://github.com/polak0v/ReSuber </font> !
+

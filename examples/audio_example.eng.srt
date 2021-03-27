@@ -1,0 +1,16 @@
+1
+00:00:02,010 --> 00:00:03,828
+A wizard is never late,
+
+2
+00:00:04,333 --> 00:00:05,292
+Frodo Baggins.
+
+3
+00:00:06,454 --> 00:00:07,767
+Nor is he early.
+
+4	
+00:00:08,070 --> 00:00:10,797
+He arrives precisely when he means to.
+
