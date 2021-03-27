@@ -183,7 +183,7 @@ def filter_audio(audio, threshold=None, kernel_size=None):
     # get and convolve the audio magnitude spectrum
     audio_mag = np.abs(audio)
     audio_filtered = tf_1d_gaussian_filtering(audio_mag, kernel_size=kernel_size)
-    default_threshold = np.quantile(audio_filtered[audio_mag>0], 1/2)
+    default_threshold = np.quantile(audio_filtered[audio_mag>0], 1/4)
     # manual threshold to filter noise
     if threshold is None:
         threshold = default_threshold

@@ -60,7 +60,7 @@ def plot_data(model, x, target, debug_dir):
         plotly_outputs += ['offsets']
     
     # cost function over params
-    fig = px.line(x=plotly_inputs, y=plotly_outputs, labels={'x':'time (ms)', 'y':'magnitude'})
+    fig = px.line(plotly_inputs, y=plotly_outputs, labels={'x':'time (ms)', 'y':'magnitude'})
     fig.write_html('{}/data.html'.format(debug_dir))
 
 def plot_loss(losses, debug_dir):
@@ -223,7 +223,7 @@ def fit(x, target, rigid=True, mask=None, max_offset_range=None, range_weight=[-
     opt_b = tf.keras.optimizers.Adam(learning_rate=lr_b)
     opt_B = tf.keras.optimizers.Adam(learning_rate=lr_B)
     # iterations parameters
-    max_iters = 5000
+    max_iters = 2000
     min_iters = int(0.05 * max_iters)
     min_loss_diff = 1e-9
     step = 0
