@@ -316,8 +316,8 @@ def add_credits(subs):
         `pysubs2.ssafile.SSAFile` : subtitle object with credits appended at the end
     """
 
-    start = int(subs[-1].end) + 5000
-    end = start + 5000
+    start = int(subs[-1].end) + 2000
+    end = start + 2000
     text = "Processed with <i>ReSuber</i>.\nCheck the github page <font color=\"blue\"> https://github.com/polak0v/ReSuber </font> !"
     event = pysubs2.SSAEvent(start=start, end=end, text=text)
     subs += [event]
