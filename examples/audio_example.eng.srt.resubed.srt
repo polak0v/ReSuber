@@ -1,21 +1,21 @@
 1
-00:00:00,852 --> 00:00:02,676
+00:00:00,849 --> 00:00:02,674
 A wizard is never late,
 
 2
-00:00:03,190 --> 00:00:04,158
+00:00:03,188 --> 00:00:04,156
 Frodo Baggins.
 
 3
-00:00:05,327 --> 00:00:06,647
+00:00:05,326 --> 00:00:06,647
 Nor is he early.
 
 4
-00:00:06,960 --> 00:00:09,701
+00:00:06,959 --> 00:00:09,702
 He arrives precisely when he means to.
 
 5
-00:00:11,701 --> 00:00:13,701
+00:00:11,702 --> 00:00:13,702
 Processed with <i>ReSuber</i>.
 Check the github page <font color="blue"> https://github.com/polak0v/ReSuber </font> !
 
