@@ -70,7 +70,9 @@ def run(input_dir=".", reference_language="eng", target_language="fr", encoding=
         translated_text_list = [item for sublist in translated_text_list for item in sublist]
         ii = 0
         for sub in ref_lang_sub:
-            output_sub.insert(ii, pysubs2.SSAEvent(start=sub.start, end=sub.end, text=translated_text_list[ii]))
+            # format the translated text
+            t_text = translated_text_list[ii].replace("  ", "\n").replace(" -", "\n-")
+            output_sub.insert(ii, pysubs2.SSAEvent(start=sub.start, end=sub.end, text=t_text))
             ii = ii + 1
 
         print(f"\nSaving output to {output_sub_path}")
