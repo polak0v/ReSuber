@@ -17,7 +17,9 @@ import re
 import glob
 import os
 import sys
+import argparse
 import subprocess
+import resuber.utils as utils
 
 def any_(arr, match):
     return any([elem == match for elem in arr])
@@ -116,7 +118,7 @@ def run(input_dir=".", output_container="mkv"):
                     metadata_lang += [f"-disposition:s:s:{stream_no}", "0"]
                     stream_no += 1
                 for subfile in fr_srt: 
-                subfiles += ["-i", subfile] 
+                    subfiles += ["-i", subfile] 
                 maps += ["-map", str(map_no)]
                 metadata_lang += [f"-metadata:s:s:{stream_no}", "language=fre", f"-disposition:s:s:{stream_no}", "default"]
                 map_no += 1
@@ -131,11 +133,11 @@ def run(input_dir=".", output_container="mkv"):
                         map_no += 1
                         stream_no += 1
             # proper encoding (for french) here
-    # FILE=*.fr.srt; file -i $FILE;
-    # iconv -f ISO-8859-15 -t UTF-8 input.fr.srt -o output.fr.srt
-    # iconv -f WINDOWS-1258 -t UTF-8 input.fr.srt -o output.fr.srt
-    # to check file : iconv -f utf-8 -t ucs-4 out.srt -o /dev/null
-    # mv output.fr.srt $FILE
+            # FILE=*.fr.srt; file -i $FILE;
+            # iconv -f ISO-8859-15 -t UTF-8 input.fr.srt -o output.fr.srt
+            # iconv -f WINDOWS-1258 -t UTF-8 input.fr.srt -o output.fr.srt
+            # to check file : iconv -f utf-8 -t ucs-4 out.srt -o /dev/null
+            # mv output.fr.srt $FILE
             # creating ffmpeg command
             ffmpeg_cmd = ["ffmpeg", "-y"]
             # decoders
@@ -146,6 +148,8 @@ def run(input_dir=".", output_container="mkv"):
             ffmpeg_cmd += maps + ["-c", "copy"]
             # language metadata
             ffmpeg_cmd += metadata_lang
+            # remove previous title metadata
+            ffmpeg_cmd += ["-metadata", "title="]
             # encoders
             ffmpeg_cmd += video_encoder + audio_encoder + sub_encoder
             # output
