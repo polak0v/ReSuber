@@ -12,6 +12,6 @@ setup(name='resuber',
       license='MIT',
       packages=['resuber'],
       scripts=['bin/resuber', 'bin/spleeter2resuber', 'bin/resuber-translate', 'bin/resuber-move', 'bin/resuber-merge'],
-      install_requires=['tensorflow-gpu==2.3.0', 'scipy==1.4.1', 'matplotlib==3.1.2'],
+      install_requires=['tensorflow-gpu==2.4.0', 'scipy==1.4.1', 'matplotlib==3.1.2'],
       include_package_data=True,
       zip_safe=False)
