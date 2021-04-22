@@ -165,8 +165,8 @@ def rough_exploration(model, x, target, init_params, range_min, range_max, debug
     -------
         `list` [float] : optimal transformation parameters (weight and offset)
     """
-    weights = [np.linspace(init_params[0] + range_min[0], init_params[0] + range_max[0], 20)
-            , np.linspace(init_params[1] + range_min[1], init_params[1] + range_max[1], 20)]
+    weights = [np.linspace(init_params[0] + range_min[0], init_params[0] + range_max[0], 30)
+            , np.linspace(init_params[1] + range_min[1], init_params[1] + range_max[1], 30)]
     cost = np.zeros((len(weights[0]), len(weights[1])), dtype=np.float32)
 
     # loop on all parameters combination
@@ -223,7 +223,7 @@ def fit(x, target, rigid=True, mask=None, max_offset_range=None, range_weight=[-
     opt_b = tf.keras.optimizers.Adam(learning_rate=lr_b)
     opt_B = tf.keras.optimizers.Adam(learning_rate=lr_B)
     # iterations parameters
-    max_iters = 2000
+    max_iters = 5000
     min_iters = int(0.05 * max_iters)
     min_loss_diff = 1e-9
     step = 0
