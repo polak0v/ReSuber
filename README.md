@@ -18,7 +18,7 @@ It also provide different utilities, including automatic translation of SRT subt
 
 The main tool of this toolbox, `resuber`, performs a language agnostic AI-powered re-synchronization of any `.srt` subtitle file, given the corresponding `.wav` audio vocal file from a movie.
 
-## Basic
+## First use
 
 Given any directory with the following file-structure (and same name):
 
