@@ -19,6 +19,7 @@ ReSuber also provide different utilities, including vocal audio extraction, subt
 # Usage
 
 The main tool of this toolbox, `resuber`, re-synchronize any `.srt` subtitle file, given its corresponding `.wav` audio vocal file from a movie.
+For the complete list of tools, you should read [this paragraph](#optionnal-tools).
 
 ## First use
 
@@ -46,11 +47,13 @@ After completion, each subtitle will be re-synchronized and saved into new files
   |  |-movie_example.fr.srt.resubed.srt
   |  |-movie_example.eng.srt.resubed.srt
 ```
-If you don't have the audio track for your movie, follow [this section](#i-dont-have-the-audio-track-from-my-movie)
+If you don't have the audio track for your movie, follow [this section](#i-dont-have-the-audio-track-from-my-movie).
 
 Input subtitle language extensions must follow [ISO_639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes).
 
-## Advanced users
+## Advanced use
+
+### Arguments
 
 ```
 usage: resuber [-h] [--debug] [--input-dir INPUT_DIR]
@@ -121,7 +124,6 @@ There are several parameters that allows you to have some control over the fitti
     ```
     resuber --range-weight -0.0001 0.0001 --range-offset -200.1 -199.9 --fix-weight --fix-offset
     ```
-
 ### Debugging
 
 I advice you to enable the `--debug` argument, it will create a new folder `resuber-debug` in which you will find usefull files.
@@ -142,7 +144,7 @@ I advice you to enable the `--debug` argument, it will create a new folder `resu
 `*_resubed.txt` is the processed subtitle converted into a `.txt` [Audacity](https://www.audacityteam.org/) label file. This is really usefull if you want to load the audio track, and view the subtitles.
 
 `*.[lang]` folders contains intermediate and output from the algorithm:
-* `cost_2d.html` correspond to the initial affine parameters (scale and offset) before the gradient-descent. Ideally, there should be just one ellipsoid cluster for linear de-synchronization.
+* `cost_2d.html` correspond to the initial affine parameters (scale and offset) before the gradient-descent. Ideally, the shape of the cost should be gaussian-like (if) linear de-synchronization).
 * `data.html` is a truncated view of the input subtitle signal (blue), target audio (green) and re-synchronized subtitle signal (orange). Re-synchronized subtitle signal should be as much close as possible to the target audio.
 * `loss.html` show the variation of the fitness (correlation) at each iteration. Ideally, it should be an asymptotic decreasing function.
 
@@ -155,7 +157,16 @@ If that is the case, you can try to use the `--refine` argument. With `mask`, `r
 # Optionnal tools
 
 ReSuber is a software with different tools, each serving its own purpose.
-To know which tool is best suited for your case, you should read the following sections.
+Instead of creating a big pipeline (and messing up with dependencies), I made multiple tools that are independent between each other.
+To know which tool is best suited for your case, select one of the following section.
+
+[>> I don't have the audio track from my movie](#i-dont-have-the-audio-track-from-my-movie)
+
+[>> I have an original (correct) subtitle, and I want to synchronize another one](#i-have-an-original-correct-subtitle-and-i-want-to-synchronize-another-one)
+
+[>> I want to translate my subtitle](#i-want-to-translate-my-subtitle)
+
+[>> I have a subtitle that I want to merge with my movie file](#i-have-a-subtitle-that-i-want-to-merge-with-my-movie-file)
 
 ## I don't have the audio track from my movie
 
@@ -244,7 +255,7 @@ optional arguments:
   --encoding ENCODING
 ```
 
-## Ok, I have my subtitle, how to merge it in my movie file ?
+## I have a subtitle that I want to merge with my movie file
 
 For this you can use [mkvmerge](https://mkvtoolnix.download/doc/mkvmerge.html), but I also made a home-made tool `resuber-merge` that requires [ffmpeg](https://www.ffmpeg.org/) to be installed.
 
