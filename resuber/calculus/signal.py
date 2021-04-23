@@ -78,7 +78,7 @@ def read_subs(input_sub_filepath, target_fs=1000, encoding="utf-8"):
 
     # box signal correspond to the subs
     target_ratio = target_fs / 1000.
-    subs_signal = np.zeros(( np.int32(duration_sub_in_ms*target_ratio + 1),), dtype=np.int32)
+    subs_signal = np.zeros(( np.int32(duration_sub_in_ms*target_ratio + 1),), dtype=np.float32)
     starts = np.array([], dtype=np.int32)
     ends = np.array([], dtype=np.int32)
     for sub in subs:
@@ -88,7 +88,7 @@ def read_subs(input_sub_filepath, target_fs=1000, encoding="utf-8"):
         end_ix = np.int32(sub.end*target_ratio)
         starts = np.append(starts, start)
         ends = np.append(ends, end)
-        subs_signal[start_ix:end_ix] = 1
+        subs_signal[start_ix:end_ix] = 1.
 
     return subs_signal, subs, starts, ends
 
@@ -189,7 +189,7 @@ def filter_audio(audio, threshold=None, kernel_size=None):
         threshold = default_threshold
     else:
         threshold = max(threshold, default_threshold)
-    audio_preprocessed = np.array(audio_filtered > threshold, dtype=np.int32)
+    audio_preprocessed = np.array(audio_filtered > threshold, dtype=np.float32)
 
     return audio_preprocessed
 
