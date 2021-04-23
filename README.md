@@ -2,7 +2,7 @@
 
 # ReSuber
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/polak0v/ReSuber/HEAD) [![Python 3.6](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/) [![Donate with Bitcoin](https://en.cryptobadges.io/badge/small/12eAEKU4rgvhLCxvdkxKJYocJdEFRyNrta)](https://en.cryptobadges.io/donate/12eAEKU4rgvhLCxvdkxKJYocJdEFRyNrta)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/polak0v/ReSuber/HEAD) [![Python 3.6](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/) [![PyPI version](https://badge.fury.io/py/resuber.svg)](https://badge.fury.io/py/resuber)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Donate with Bitcoin](https://en.cryptobadges.io/badge/small/12eAEKU4rgvhLCxvdkxKJYocJdEFRyNrta)](https://en.cryptobadges.io/donate/12eAEKU4rgvhLCxvdkxKJYocJdEFRyNrta)
 
 ![](logo.svg)
 
