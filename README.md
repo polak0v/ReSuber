@@ -16,7 +16,7 @@ It also provide different utilities, including automatic translation of SRT subt
 
 # Usage
 
-The main tool of this toolbox, `resuber`, performs a language agnostic AI-powered re-synchronization of any `.srt` subtitle file, given the corresponding `.wav` audio vocal file from a movie.
+The main tool of this toolbox, `resuber`, re-synchronize any `.srt` subtitle file, given its corresponding `.wav` audio vocal file from a movie.
 
 ## First use
 
@@ -283,7 +283,7 @@ python3 -m pip install resuber
 ```
 git clone https://github.com/polak0v/ReSuber
 cd ReSuber
-python3 -m pip install .
+make install
 ```
 
 # Support

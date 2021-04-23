@@ -6,7 +6,8 @@
 ReSuber is an automatic tool to re-synchronize any SRT subtitles, using its corresponding vocal audio WAV stream from a movie.
 It uses machine learning techniques to perform language agnostic re-synchronization, by checking the signal correlation
 between the vocal audio stream and the corrected subtitle signal.
-It also provide different utilities, including automatic translation of SRT subtitles with the Google Cloud Translation API (no key required).
+ReSuber also provide different utilities, including vocal audio extraction, subtitle/video file merging into containers and
+automatic translation of SRT subtitles with the Google Cloud Translation API (no API key required).
 
 License MIT.
 
