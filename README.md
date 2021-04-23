@@ -46,7 +46,7 @@ After completion, each subtitle will be re-synchronized and saved into new files
   |  |-movie_example.fr.srt.resubed.srt
   |  |-movie_example.eng.srt.resubed.srt
 ```
-If you don't have the audio track for your movie, follow [this section](#I-don't-have-the-audio-track-from-my-movie)
+If you don't have the audio track for your movie, follow [this section](#i-dont-have-the-audio-track-from-my-movie)
 
 Input subtitle language extensions must follow [ISO_639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes).
 
