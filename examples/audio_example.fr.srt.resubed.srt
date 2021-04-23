@@ -1,21 +1,21 @@
 1
-00:00:00,869 --> 00:00:02,687
+00:00:00,877 --> 00:00:02,694
 Un magicien n'est jamais en retard,
 
 2
-00:00:03,193 --> 00:00:04,152
+00:00:03,199 --> 00:00:04,159
 Frodon Sacquet.
 
 3
-00:00:05,314 --> 00:00:06,627
+00:00:05,320 --> 00:00:06,633
 Ni jamais en avance.
 
 4
-00:00:06,930 --> 00:00:09,657
+00:00:06,936 --> 00:00:09,663
 Il arrive à point nommé.
 
 5
-00:00:11,657 --> 00:00:13,657
+00:00:11,663 --> 00:00:13,663
 Processed with <i>ReSuber</i>.
 Check the github page <font color="blue"> https://github.com/polak0v/ReSuber </font> !
 
