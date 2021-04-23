@@ -2,7 +2,9 @@
 
 # ReSuber
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/polak0v/ReSuber/HEAD) [![Python 3.6](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/) [![PyPI version](https://badge.fury.io/py/resuber.svg)](https://badge.fury.io/py/resuber)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Donate with Bitcoin](https://en.cryptobadges.io/badge/small/12eAEKU4rgvhLCxvdkxKJYocJdEFRyNrta)](https://en.cryptobadges.io/donate/12eAEKU4rgvhLCxvdkxKJYocJdEFRyNrta)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/polak0v/ReSuber/HEAD) [![Python 3.6](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/) [![PyPI version](https://badge.fury.io/py/resuber.svg)](https://badge.fury.io/py/resuber)  ![GitHub](https://img.shields.io/github/license/polak0v/resuber) [![Donate with Bitcoin](https://en.cryptobadges.io/badge/small/12eAEKU4rgvhLCxvdkxKJYocJdEFRyNrta)](https://en.cryptobadges.io/donate/12eAEKU4rgvhLCxvdkxKJYocJdEFRyNrta)
+
+
 
 ![](logo.svg)
 
@@ -155,7 +157,7 @@ If that is the case, you can try to use the `--refine` argument. With `mask`, `r
 ReSuber is a software with different tools, each serving its own purpose.
 To know which tool is best suited for your case, you should read the following sections.
 
-## I don't have the audio track from my movie.
+## I don't have the audio track from my movie
 
 [Spleeter](https://github.com/deezer/spleeter) from [Deezer](https://www.deezer.com/us/) is a deep-learning tool that separates vocal track from an audio track.
 This is obviously really usefull here, since the music and sound effects "pollutes" the signal and makes the correlation between the subtitle and audio signal a mess.
