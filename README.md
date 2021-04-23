@@ -10,7 +10,7 @@ ReSuber is an automatic tool to re-synchronize any SRT subtitles, using its corr
 
 It uses machine learning techniques to perform language agnostic re-synchronization, by checking the signal correlation between the vocal audio stream and the corrected subtitle signal.
 
-It also provide different utilities, including automatic translation of SRT subtitles with the Google Cloud Translation API (no key required).
+ReSuber also provide different utilities, including vocal audio extraction, subtitle/video file merging into containers and automatic translation of SRT subtitles with the Google Cloud Translation API (no API key required).
 
 [License](LICENSE)
 
@@ -284,6 +284,14 @@ python3 -m pip install resuber
 git clone https://github.com/polak0v/ReSuber
 cd ReSuber
 make install
+```
+
+# Unit testing
+
+You will need [pytest](https://docs.pytest.org/en/6.2.x/), and then run:
+
+```
+pytests tests/
 ```
 
 # Support
