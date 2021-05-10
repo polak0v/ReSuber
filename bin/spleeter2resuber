@@ -58,9 +58,10 @@ for input_file in all_videos:
         output_vocal = os.path.join(output_dir, ".".join(os.path.basename(input_file).split(".")[:-1]) + ".wav")
         if not os.path.exists(output_vocal):
             # extract the audio stream from movie
-            print("Extracting audio signal from: {}".format(input_file))
-            process = subprocess.Popen(["ffmpeg", "-y", "-i", input_file, input_audio], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print(process.stdout.read().decode("utf-8"))
+            if not os.path.exists(input_audio):
+                print("Extracting audio signal from: {}".format(input_file))
+                process = subprocess.Popen(["ffmpeg", "-y", "-i", input_file, "-ac", "2", input_audio], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(process.stdout.read().decode("utf-8"))
 
             # get audio duration
             process = subprocess.Popen(["ffprobe"
