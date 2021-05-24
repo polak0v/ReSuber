@@ -30,6 +30,10 @@ def translate(url, text):
     response = urllib.request.urlopen(url + urllib.parse.quote(text))
     translated_text = json.loads(response.read())
     translated_text = " ".join([t[0] for t in translated_text[0]])
+    #keep html tags, and remove spaces
+    translated_text = translated_text.replace("{\\ ", "{\\")
+    translated_text = translated_text.replace("{\\i1} ", "{\\i1}")
+    translated_text = translated_text.replace(" {\\i0}", "{\\i0}")
 
     return translated_text
 
