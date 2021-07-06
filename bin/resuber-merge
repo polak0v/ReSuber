@@ -58,7 +58,7 @@ def run(input_dir=".", output_container="mkv", cuda=False):
         ext = input_file.split(".")[-1]
         if (ext == "mp4") | (ext == "mkv") | (ext == "avi"):
             # preparing output file
-            output_file = output_dir + "/" + input_file[len(input_dir) + 1:-len(ext) -1] + "_merged." + output_container
+            output_file = os.path.join(output_dir, os.path.basename(input_file)[:-len(ext) -1] + "_merged." + output_container)
 
             ### video codec
             process = subprocess.Popen(["ffprobe"
