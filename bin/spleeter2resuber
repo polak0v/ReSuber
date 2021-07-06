@@ -24,8 +24,6 @@ import time
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 import numpy as np
-import spleeter
-import spleeter.commands, spleeter.utils
 import resuber.utils as utils
 import resuber.calculus as calculus
 
@@ -89,7 +87,6 @@ for input_file in all_videos:
                                             , "-m"
                                             , "spleeter"
                                             , "separate"
-                                            , "-i"
                                             , input_audio
                                             , "-p"
                                             , "spleeter:2stems"

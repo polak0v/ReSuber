@@ -126,7 +126,7 @@ def run(input_dir=".", output_container="mkv", cuda=False):
                 map_no += 1
                 stream_no += 1
 
-                eng_srt = has_lang_srt(input_file, lang="eng")
+                eng_srt = has_lang_srt(input_file, lang="en")
                 if eng_srt:
                     for subfile in eng_srt: 
                         subfiles += ["-i", subfile] 
