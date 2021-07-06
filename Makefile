@@ -1,8 +1,8 @@
 # Makefile for the 'resuber' package.
 # inspired from https://github.com/xolox/python-humanfriendly/blob/master/Makefile
 
-PACKAGE_NAME=$(python3 setup.py --name)
-PACKAGE_VERSION=$(python3 setup.py --version)
+PACKAGE_NAME=$(shell python3 setup.py --name)
+PACKAGE_VERSION=$(shell python3 setup.py --version)
 
 default:
 	@echo "Makefile for $(PACKAGE_NAME) $(PACKAGE_VERSION)"
@@ -26,7 +26,6 @@ test:
 	@pytest
 
 publish:
-	@git add resuber/__init__.py
 	@git commit resuber/__init__.py -m "Release v${PACKAGE_VERSION}"
 	@git tag v${PACKAGE_VERSION}
 	@git push origin && git push --tags origin
