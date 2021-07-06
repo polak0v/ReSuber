@@ -26,21 +26,14 @@ test:
 	@pytest
 
 publish:
+	@$(MAKE) install
 	@git commit resuber/__init__.py -m "Release v${PACKAGE_VERSION}"
 	@git tag v${PACKAGE_VERSION}
 	@git push origin && git push --tags origin
-	@$(MAKE) install
 	@python3 -m pip install twine wheel setuptools
 	@python3 -m twine upload dist/*
 	@$(MAKE) clean
 	@echo "Do not forget to create the release on github!"
-
-publish:
-	@git push origin && git push --tags origin
-	@python3 -m pip install twine wheel setuptools
-	@$(MAKE) install
-	@python3 -m twine upload dist/*
-	@$(MAKE) clean
 
 clean:
 	@rm -Rf *.egg *.egg-info .cache .coverage .tox build dist docs/build htmlcov
