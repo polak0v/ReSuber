@@ -28,6 +28,7 @@ test:
 publish:
 	@$(MAKE) install
 	@git tag v${PACKAGE_VERSION}
+	@git add resuber/__init__.py
 	@git commit resuber/__init__.py -m "Release v${PACKAGE_VERSION}"
 	@git push origin && git push --tags origin
 	@python3 -m pip install twine wheel setuptools
