@@ -26,11 +26,11 @@ test:
 	@pytest
 
 publish:
-	@$(MAKE) install
 	@git add resuber/__init__.py
 	@git commit resuber/__init__.py -m "Release v${PACKAGE_VERSION}"
 	@git tag v${PACKAGE_VERSION}
 	@git push origin && git push --tags origin
+	@$(MAKE) install
 	@python3 -m pip install twine wheel setuptools
 	@python3 -m twine upload dist/*
 	@$(MAKE) clean
