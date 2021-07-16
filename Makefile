@@ -23,7 +23,7 @@ install:
 	@python3 -m pip install -e .
 
 test: 
-	@pytest
+	@pytest tests/*
 
 publish:
 	@$(MAKE) install
