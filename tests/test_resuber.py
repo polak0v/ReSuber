@@ -18,7 +18,8 @@ def test_resuber():
         # rescaling both subtitile signal (naming for the function not optimal)
         target_signal, ref_signal = resuber.calculus.signal.rescale_audio_subs(target_signal, ref_signal)
         # comparison
-        tf.debugging.assert_near(ref_signal, target_signal, atol=1e-3)
+        area = tf.reduce_sum(ref_signal - target_signal)/tf.cast(tf.shape(ref_signal), dtype=tf.float32)
+        tf.debugging.assert_near(area, 0, atol=1e-4)
 
 if __name__ == "__main__":
     test_resuber()
