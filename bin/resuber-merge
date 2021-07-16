@@ -148,16 +148,20 @@ def run(input_dir=".", output_container="mkv", cuda=False, process_server=False)
             # inputs
             ffmpeg_cmd += ["-i", input_file] + sub_char_encode + subfiles
             # mapping
-            ffmpeg_cmd += maps + ["-c", "copy"]
+            ffmpeg_cmd += maps
             # language metadata
             ffmpeg_cmd += metadata_lang
             # remove previous title metadata
             ffmpeg_cmd += ["-metadata", "title="]
             if process_server:
+              ffmpeg_cmd += ["-c:v", "copy"]
+              ffmpeg_cmd += ["-c:s", "copy"]
               # encoders
               ffmpeg_cmd += video_encoder + audio_encoder + audio_increase + sub_encoder
               # audio increase
               ffmpeg_cmd += audio_increase
+            else:
+              ffmpeg_cmd += ["-c", "copy"]
             # output
             ffmpeg_cmd += [output_file]
             print(" ".join( [cmd.replace(" ", "\ ").replace("(", "\\(").replace(")", "\\)") for cmd in ffmpeg_cmd] ))
