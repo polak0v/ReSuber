@@ -33,10 +33,9 @@ def has_lang_srt(input_file, lang="fr"):
     subs = glob.glob(glob.escape(filename) + f".{lang}.srt")
     return subs if subs else False
 
-def run(input_dir=".", output_container="mkv", cuda=False):
+def run(input_dir=".", output_container="mkv", cuda=False, process_server=False):
     # parameters
     output_dir = input_dir
-    logpath = output_dir + '/python-ffmpeg.log'
 
     # Get the list of all files in directory tree at given path
     listOfFiles = list()
@@ -94,6 +93,7 @@ def run(input_dir=".", output_container="mkv", cuda=False):
             audio_codec = process.stdout.read().decode("utf-8").split("\n")[:-1]
             if not all_(audio_codec, "aac"):
                 audio_encoder = ["-c:a", "aac"]
+            audio_increase = ["-filter:a", "volume=10dB"]
 
             ### sub codec
             process = subprocess.Popen(["ffprobe"
@@ -142,8 +142,9 @@ def run(input_dir=".", output_container="mkv", cuda=False):
             # mv output.fr.srt $FILE
             # creating ffmpeg command
             ffmpeg_cmd = ["ffmpeg", "-y"]
-            # decoders
-            ffmpeg_cmd += video_decoder
+            if process_server:
+              # decoders
+              ffmpeg_cmd += video_decoder
             # inputs
             ffmpeg_cmd += ["-i", input_file] + sub_char_encode + subfiles
             # mapping
@@ -152,17 +153,17 @@ def run(input_dir=".", output_container="mkv", cuda=False):
             ffmpeg_cmd += metadata_lang
             # remove previous title metadata
             ffmpeg_cmd += ["-metadata", "title="]
-            # encoders
-            ffmpeg_cmd += video_encoder + audio_encoder + sub_encoder
+            if process_server:
+              # encoders
+              ffmpeg_cmd += video_encoder + audio_encoder + audio_increase + sub_encoder
+              # audio increase
+              ffmpeg_cmd += audio_increase
             # output
             ffmpeg_cmd += [output_file]
             print(" ".join( [cmd.replace(" ", "\ ").replace("(", "\\(").replace(")", "\\)") for cmd in ffmpeg_cmd] ))
-
             ffmpeg_process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE)
-            logs = subprocess.Popen(["tee", "-a", logpath], stdin=ffmpeg_process.stdout, stdout=subprocess.PIPE)
-            output = logs.communicate()[0]
-            # for line in ffmpeg_process.stdout:
-            #     sys.stdout.write(line)
+            for c in iter(lambda: ffmpeg_process.stdout.read(1), b''): 
+              sys.stdout.buffer.write(c)
 
 def get_parser():
     """Get the parser.
@@ -178,6 +179,9 @@ def get_parser():
                         , dest="output_container")
     parser.add_argument('--cuda'
                         , dest="cuda"
+                        , action="store_true")
+    parser.add_argument('--process-server'
+                        , dest="process_server"
                         , action="store_true")
     
     return parser
