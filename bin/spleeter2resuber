@@ -100,10 +100,12 @@ for input_file in all_videos:
                                             , os.path.dirname(input_audio)]
                                             , stdout=subprocess.PIPE)
                 vocal_offset = vocal_offset + int(max_duration_in_ms/1000)
+                print("\r\t {}/{}".format(i+1, nb_iter + 1))
                 
                 # reading vocal stems
                 vocal, fs = calculus.signal.read_audio(vocal_file.format(i), target_fs=44100)
                 full_vocal = np.concatenate((full_vocal, vocal))
+            print("")
             # saving full vocal file
             calculus.signal.save_audio(full_vocal, output_vocal, fs)
 print("spleeter2resuber duration {} s".format(time.time() - start_time))
