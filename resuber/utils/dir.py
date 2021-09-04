@@ -59,6 +59,7 @@ def filepath_match(all_filepaths, filepath):
     """
     filepaths = []
     filepath_name = '.'.join(os.path.basename(filepath).split('.')[:-1])
+    filepath_name = re.escape(filepath_name)
     # escape parenthesis
     filepath_name = filepath_name.replace("(", "\\(")
     filepath_name = filepath_name.replace(")", "\\)")
