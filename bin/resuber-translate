@@ -37,7 +37,7 @@ def translate(url, text):
 
     return translated_text
 
-def run(input_dir=".", reference_language="eng", target_language="fr", encoding="utf8"):
+def run(input_dir=".", reference_language="en", target_language="fr", encoding="utf8"):
 
     url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl={reference_language}&tl={target_language}&dt=t&q="
     separator = "\n"
@@ -46,7 +46,10 @@ def run(input_dir=".", reference_language="eng", target_language="fr", encoding=
     # reading reference language (the text to be taken) and target timestamps (the timestamps to be used)
     ref_lang_sub_paths = glob.glob(os.path.join(output_dir, "*." + reference_language + ".srt"))
     for ref_lang_sub_path in ref_lang_sub_paths:
-        output_sub_path = ref_lang_sub_path + "." + target_language +".srt"
+        output_sub_path = ref_lang_sub_path.replace(reference_language + ".srt", target_language +".srt")
+        if os.path.exists(output_sub_path):
+            print(f"{output_sub_path} already exists, skipping!")
+            continue
         output_sub = pysubs2.SSAFile()
 
         ref_lang_sub = pysubs2.load(ref_lang_sub_path, encoding=encoding)
@@ -65,15 +68,21 @@ def run(input_dir=".", reference_language="eng", target_language="fr", encoding=
                 translated_text_list += [translated_text.split(separator)]
                 text_list = []
                 char_count = 0
+                # additionnal sleep to prevent hitting request limit
+                time.sleep(0.1)
             print("", end='\b')
             ii = ii + 1
+        print("")
         # translate last batch
-        translated_text = translate(url, separator.join(text_list))
-        translated_text_list += [translated_text.split(separator)]
+        if text_list:
+          translated_text = translate(url, separator.join(text_list))
+          translated_text_list += [translated_text.split(separator)]
 
         # writing translated with final list
         translated_text_list = [item for sublist in translated_text_list for item in sublist]
         ii = 0
+        if not (len(ref_lang_sub) == len(translated_text_list)):
+          raise ValueError("Something went wrong with the translation, remove empty subtitle or weird characters!")
         for sub in ref_lang_sub:
             # format the translated text
             t_text = translated_text_list[ii].replace("  ", "\n").replace(" -", "\n-")
