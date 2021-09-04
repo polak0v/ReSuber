@@ -29,9 +29,18 @@ def all_(arr, match):
     return all([elem == match for elem in arr])
 
 def has_lang_srt(input_file, lang="fr"):
-    filename = ".".join(input_file.split(".")[:-1])
-    subs = glob.glob(glob.escape(filename) + f".{lang}.srt")
-    return subs if subs else False
+  output_sub = False
+  filename = ".".join(input_file.split(".")[:-1])
+  sub = filename + f".{lang}.srt"
+
+  if os.path.exists(sub):
+    output_sub = sub
+  else:
+    sub = filename + f"-{lang}.srt"
+    if os.path.exists(sub):
+      output_sub = sub
+  
+  return output_sub
 
 def run(input_dir=".", output_container="mkv", cuda=False, process_server=False):
     # parameters
@@ -78,22 +87,10 @@ def run(input_dir=".", output_container="mkv", cuda=False, process_server=False)
                 else:
                     video_decoder = ["-c:v", "{}".format(video_codec)]
                     video_encoder = ["-c:v", "libx264"]
-
             ### audio codec
-            process = subprocess.Popen(["ffprobe"
-                                        , "-v"
-                                        , "error"
-                                        , "-select_streams"
-                                        , "a"
-                                        , "-show_entries"
-                                        , "stream=codec_name"
-                                        , "-of"
-                                        , "default=noprint_wrappers=1:nokey=1"
-                                        , input_file], stdout=subprocess.PIPE)
-            audio_codec = process.stdout.read().decode("utf-8").split("\n")[:-1]
-            if not all_(audio_codec, "aac"):
-                audio_encoder = ["-c:a", "aac"]
-            audio_increase = ["-filter:a", "volume=10dB"]
+            if process_server:
+              audio_encoder = ["-c:a", "aac"]
+              audio_increase = ["-filter:a", "volume=10dB"]
 
             ### sub codec
             process = subprocess.Popen(["ffprobe"
@@ -109,31 +106,33 @@ def run(input_dir=".", output_container="mkv", cuda=False, process_server=False)
             sub_codec = process.stdout.read().decode("utf-8").split("\n")[:-1]
             if not all_(sub_codec, "subrip"):
                 sub_encoder = ["-c:s", "srt"]
-            fr_srt = has_lang_srt(input_file)
+            # disable previous subtitle disposition
+            stream_no = 0
+            for _ in range(len(sub_codec)):
+              metadata_lang += [f"-disposition:s:{stream_no}", "0", f"-metadata:s:s:{stream_no}", "title="]
+              stream_no += 1
+            # checking existing subtitles
+            map_no = 1
+            fr_srt = has_lang_srt(input_file, lang="fr")
+            if not fr_srt:
+              fr_srt = has_lang_srt(input_file, lang="fre")
             if fr_srt:
                 # sub_char_encode = ["-sub_charenc", "cp1252"]
                 sub_char_encode = ["-sub_charenc", "ISO-8859-15"]
-                map_no = 1
-                stream_no = 0
-                # disable previous subtitle disposition
-                for _ in range(len(sub_codec)):
-                    metadata_lang += [f"-disposition:s:s:{stream_no}", "0"]
-                    stream_no += 1
-                for subfile in fr_srt: 
-                    subfiles += ["-i", subfile] 
+                subfiles += ["-i", fr_srt] 
                 maps += ["-map", str(map_no)]
-                metadata_lang += [f"-metadata:s:s:{stream_no}", "language=fre", f"-disposition:s:s:{stream_no}", "default"]
+                metadata_lang += [f"-metadata:s:s:{stream_no}", "language=fre", f"-disposition:s:{stream_no}", "default"]
                 map_no += 1
                 stream_no += 1
-
-                eng_srt = has_lang_srt(input_file, lang="en")
-                if eng_srt:
-                    for subfile in eng_srt: 
-                        subfiles += ["-i", subfile] 
-                        maps += ["-map", str(map_no)]
-                        metadata_lang += [f"-metadata:s:s:{stream_no}", "language=eng"]
-                        map_no += 1
-                        stream_no += 1
+            eng_srt = has_lang_srt(input_file, lang="en")
+            if not eng_srt:
+              eng_srt = has_lang_srt(input_file, lang="eng")
+            if eng_srt:
+                subfiles += ["-i", eng_srt] 
+                maps += ["-map", str(map_no)]
+                metadata_lang += [f"-metadata:s:s:{stream_no}", "language=eng"]
+                map_no += 1
+                stream_no += 1
             # proper encoding (for french) here
             # FILE=*.fr.srt; file -i $FILE;
             # iconv -f ISO-8859-15 -t UTF-8 input.fr.srt -o output.fr.srt
@@ -151,17 +150,17 @@ def run(input_dir=".", output_container="mkv", cuda=False, process_server=False)
             ffmpeg_cmd += maps
             # language metadata
             ffmpeg_cmd += metadata_lang
-            # remove previous title metadata
-            ffmpeg_cmd += ["-metadata", "title="]
             if process_server:
               ffmpeg_cmd += ["-c:v", "copy"]
               ffmpeg_cmd += ["-c:s", "copy"]
               # encoders
-              ffmpeg_cmd += video_encoder + audio_encoder + audio_increase + sub_encoder
+              ffmpeg_cmd += video_encoder + audio_encoder + sub_encoder
               # audio increase
               ffmpeg_cmd += audio_increase
             else:
               ffmpeg_cmd += ["-c", "copy"]
+            # remove previous title metadata
+            ffmpeg_cmd += ["-metadata", "title=", "-metadata:s:a", "title=", "-metadata:s:v", "title="]
             # output
             ffmpeg_cmd += [output_file]
             print(" ".join( [cmd.replace(" ", "\ ").replace("(", "\\(").replace(")", "\\)") for cmd in ffmpeg_cmd] ))
