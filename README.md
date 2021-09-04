@@ -240,7 +240,7 @@ Translate from french subtitle `movie_example.fr.srt` to english `movie_example.
 ```
 resuber-translate --ref-lang fr --tgt-lang en
 ```
-Google imposes several limitations with the number of requests. I managed to process the translation batch by batch to reduce the burden, but be careful to not run this too often (or use a VPN...).
+Google imposes several limitations with the number of requests (limit of 100 per hour). I managed to process the translation batch by batch to reduce the burden, but be careful to not run this too often (or use a VPN...).
 
 ```
 usage: resuber-translate [-h] [--input-dir INPUT_DIR]
