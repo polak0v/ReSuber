@@ -3,5 +3,5 @@ pandas==1.1.2
 plotly==5.3.1
 pysubs2==0.2.4
 scipy==1.4.1
-tensorflow==2.3.4
+tensorflow==2.6.4
 tensorflow_probability==0.11.0
